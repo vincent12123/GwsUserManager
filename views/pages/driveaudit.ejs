@@ -1,0 +1,148 @@
+  <!-- ── DRIVE AUDIT PAGE ── -->
+  <div class="page" id="page-driveaudit">
+
+    <!-- Tab bar -->
+    <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap">
+      <button class="da-tab-btn act" data-tab="target"   onclick="daTab('target')">  🎯 Target</button>
+      <button class="da-tab-btn"     data-tab="files"    onclick="daTab('files')">   📁 File Inventory</button>
+      <button class="da-tab-btn"     data-tab="sharing"  onclick="daTab('sharing')"> 🔗 Sharing</button>
+      <button class="da-tab-btn"     data-tab="activity" onclick="daTab('activity')">📋 Activity</button>
+      <button class="da-tab-btn"     data-tab="trash"    onclick="daTab('trash')">   🗑 Trash</button>
+      <button class="da-tab-btn"     data-tab="export"   onclick="daTab('export')">  📊 Export Laporan</button>
+    </div>
+
+    <!-- PANEL: Target -->
+    <div class="da-panel" data-panel="target">
+      <div class="card" style="padding:20px;max-width:640px;margin-bottom:16px">
+        <div class="card-title" style="font-size:15px;margin-bottom:4px">🎯 Target Audit</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Semua operasi read-only dan silent — user tidak menerima notifikasi apapun.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:12px">
+          <div>
+            <label class="field-label">Email User Target *</label>
+            <input id="da-email-input" class="field-input" placeholder="budi@<%= school.SCHOOL_DOMAIN %>" type="email">
+          </div>
+          <button id="da-btn-info" class="btn btn-primary" onclick="daLoadUserInfo()">🔍 Mulai Audit</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:6px;padding:8px 12px">
+          ⚠️ Pastikan audit ini sudah mendapat arahan dari pimpinan yayasan. Simpan semua bukti di lokasi aman.
+        </div>
+      </div>
+      <div id="da-user-info-result"></div>
+    </div>
+
+    <!-- PANEL: File Inventory -->
+    <div class="da-panel" data-panel="files" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:14px">📁 File Inventory</div>
+            <div style="font-size:12px;color:var(--muted)" id="da-target-label"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="da-files-search" class="field-input" style="width:180px;padding:6px 10px" placeholder="Cari nama file...">
+            <select id="da-files-filter" class="field-input" style="width:160px;padding:6px 10px">
+              <option value="all">Semua file</option>
+              <option value="shared">Hanya shared</option>
+              <option value="large">File besar (&gt;10MB)</option>
+              <option value="sensitive">Kata kunci sensitif</option>
+            </select>
+            <button class="btn btn-ghost" onclick="daLoadFiles()">⟳ Refresh</button>
+          </div>
+        </div>
+        <div id="da-files-summary" style="display:flex;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="width:30px"></th>
+              <th>Nama File</th>
+              <th style="text-align:right">Ukuran</th>
+              <th>Dibuat</th>
+              <th>Dimodifikasi</th>
+              <th style="text-align:center">Shared</th>
+            </tr></thead>
+            <tbody id="da-files-tbody">
+              <tr><td colspan="7" class="state-box">
+                <div class="state-emoji">📁</div>
+                <div class="state-title">Buka panel Target dan klik "Audit File Inventory"</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Sharing -->
+    <div class="da-panel" data-panel="sharing" style="display:none">
+      <div class="card" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="font-size:14px">🔗 Sharing Intelligence</div>
+          <button class="btn btn-ghost" onclick="daLoadSharing()">⟳ Refresh</button>
+        </div>
+        <div id="da-sharing-content">
+          <div style="color:var(--muted);text-align:center;padding:40px">Buka panel Target dulu</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Activity -->
+    <div class="da-panel" data-panel="activity" style="display:none">
+      <div class="card" style="padding:16px">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+          <div>
+            <label class="field-label">Tanggal Mulai</label>
+            <input id="da-start-date" type="date" class="field-input" style="padding:6px 10px">
+          </div>
+          <div>
+            <label class="field-label">Tanggal Selesai</label>
+            <input id="da-end-date" type="date" class="field-input" style="padding:6px 10px">
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-bottom:2px">
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="da-event-cb" value="download" checked> 📥 Download</label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="da-event-cb" value="copy" checked> 📋 Copy</label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="da-event-cb" value="change_user_access" checked> 🔗 Share</label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="da-event-cb" value="upload"> 📤 Upload</label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="da-event-cb" value="delete"> 🗑 Delete</label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" class="da-event-cb" value="move"> 📂 Move</label>
+          </div>
+          <button class="btn btn-primary" onclick="daLoadActivity()">🔍 Cari Activity</button>
+        </div>
+        <div id="da-activity-content">
+          <div style="color:var(--muted);text-align:center;padding:40px">Set filter lalu klik Cari Activity</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Trash -->
+    <div class="da-panel" data-panel="trash" style="display:none">
+      <div class="card" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="font-size:14px">🗑 File di Trash</div>
+          <button class="btn btn-ghost" onclick="daLoadTrash()">⟳ Refresh</button>
+        </div>
+        <div id="da-trash-content">
+          <div style="color:var(--muted);text-align:center;padding:40px">Buka panel Target dulu</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: Export -->
+    <div class="da-panel" data-panel="export" style="display:none">
+      <div class="card" style="padding:20px;max-width:640px">
+        <div class="card-title" style="font-size:15px;margin-bottom:4px">📊 Export Laporan Audit</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+          Kumpulkan semua data dari panel sebelumnya sebelum export. Semakin lengkap data, semakin detail laporan.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;font-size:12px">
+          <div class="da-check-item">📁 File Inventory <span id="da-chk-files" style="margin-left:auto">—</span></div>
+          <div class="da-check-item">🔗 Sharing <span id="da-chk-sharing" style="margin-left:auto">—</span></div>
+          <div class="da-check-item">📋 Activity <span id="da-chk-activity" style="margin-left:auto">—</span></div>
+          <div class="da-check-item">🗑 Trash <span id="da-chk-trash" style="margin-left:auto">—</span></div>
+        </div>
+        <button id="da-btn-export" class="btn btn-primary" onclick="daExportReport();daUpdateExportChecklist()">📋 Buat Laporan Audit</button>
+        <div id="da-export-result" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+  </div>

@@ -1,0 +1,196 @@
+ <!-- ── BANK SOAL PAGE ── -->
+  <div class="page" id="page-bank">
+    <!-- Header + Statistik -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div id="bank-stats" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label class="btn btn-ghost" style="font-size:12px;cursor:pointer">
+          📥 Import JSON
+          <input type="file" accept=".json" style="display:none" onchange="importBankSoal(this)">
+        </label>
+        <button class="btn btn-ghost" style="font-size:12px" onclick="exportBankSoal()">📤 Export JSON</button>
+        <button class="btn btn-ghost" style="font-size:12px;color:var(--red);border-color:rgba(220,38,38,.2)" onclick="deleteBankByMapel()">🗑 Hapus per Mapel</button>
+        <button class="btn btn-primary" onclick="showAddBankSoal()">+ Tambah Soal</button>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card" style="margin-bottom:12px;padding:12px 16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="bank-filter-mapel" class="field-input" style="max-width:160px;padding:7px 10px;font-size:12px" onchange="applyBankFilter()">
+          <option value="">Semua Mapel</option>
+        </select>
+        <select id="bank-filter-kelas" class="field-input" style="max-width:120px;padding:7px 10px;font-size:12px" onchange="applyBankFilter()">
+          <option value="">Semua Kelas</option>
+          <option>X</option><option>XI</option><option>XII</option>
+        </select>
+        <select id="bank-filter-bab" class="field-input" style="max-width:140px;padding:7px 10px;font-size:12px" onchange="applyBankFilter()">
+          <option value="">Semua Bab</option>
+        </select>
+        <select id="bank-filter-tingkat" class="field-input" style="max-width:110px;padding:7px 10px;font-size:12px" onchange="applyBankFilter()">
+          <option value="">Semua Level</option>
+          <option>C1</option><option>C2</option><option>C3</option>
+          <option>C4</option><option>C5</option><option>C6</option>
+        </select>
+        <select id="bank-filter-tipe" class="field-input" style="max-width:100px;padding:7px 10px;font-size:12px" onchange="applyBankFilter()">
+          <option value="">Semua Tipe</option>
+          <option value="PG">PG</option>
+          <option value="ES">Essay</option>
+        </select>
+        <input id="bank-filter-search" class="field-input" placeholder="Cari soal..." style="max-width:180px;padding:7px 10px;font-size:12px"
+          oninput="clearTimeout(window._bankSearchT);window._bankSearchT=setTimeout(applyBankFilter,400)">
+        <button class="btn btn-ghost" style="font-size:12px" onclick="resetBankFilter()">↺ Reset</button>
+        <span id="bank-count" style="font-size:12px;color:var(--muted);margin-left:4px">—</span>
+      </div>
+    </div>
+
+    <!-- Tabel -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Soal</th>
+            <th style="min-width:100px">Mapel</th>
+            <th>Kelas</th>
+            <th>Bab</th>
+            <th style="text-align:center">Level</th>
+            <th style="text-align:center">Dipakai</th>
+            <th style="text-align:center">Aksi</th>
+          </tr></thead>
+          <tbody id="bank-tbody">
+            <tr><td colspan="7" class="state-box">
+              <div class="state-emoji">📚</div>
+              <div class="state-title">Memuat bank soal...</div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="bank-pagination" style="display:flex;align-items:center;justify-content:center;padding:12px;gap:8px"></div>
+    </div>
+
+    <!-- Modal: Tambah/Edit Soal -->
+    <div class="modal-overlay" id="modal-bank-soal">
+      <div class="modal" style="max-width:560px;padding:0;overflow:hidden;max-height:90vh;overflow-y:auto">
+        <div style="padding:16px 22px 12px;border-bottom:1px solid var(--border);
+          background:linear-gradient(135deg,rgba(96,165,250,.06),transparent);
+          position:sticky;top:0;z-index:5;backdrop-filter:blur(8px)">
+          <div class="modal-title" id="modal-bank-soal-title">+ Tambah Soal ke Bank</div>
+        </div>
+        <div style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
+          <!-- Row 1: Mapel, Kelas, Bab -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div>
+              <label class="field-label">Mapel *</label>
+              <input id="bs-mapel" class="field-input" placeholder="Bahasa Indonesia" list="bank-mapel-list">
+              <datalist id="bank-mapel-list"></datalist>
+            </div>
+            <div>
+              <label class="field-label">Kelas</label>
+              <select id="bs-kelas" class="field-input">
+                <option value="Semua">Semua</option>
+                <option>X</option><option>XI</option><option>XII</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Bab / Topik</label>
+              <input id="bs-bab" class="field-input" placeholder="Bab 3 / Fonologi">
+            </div>
+          </div>
+          <!-- Row 2: Tingkat, Tipe, Bobot -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div>
+              <label class="field-label">Level Bloom</label>
+              <select id="bs-tingkat" class="field-input">
+                <option>C1</option><option selected>C2</option><option>C3</option>
+                <option>C4</option><option>C5</option><option>C6</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Tipe</label>
+              <select id="bs-tipe" class="field-input" onchange="toggleBankOpsi(this.value)">
+                <option value="PG">Pilihan Ganda</option>
+                <option value="ES">Essay</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Bobot Poin</label>
+              <input id="bs-bobot" class="field-input" type="number" min="1" value="1" style="max-width:80px">
+            </div>
+          </div>
+          <!-- Soal -->
+          <div>
+            <label class="field-label">Soal *</label>
+            <textarea id="bs-soal" class="field-input" rows="3" placeholder="Tulis soal di sini..." style="resize:vertical"></textarea>
+          </div>
+          <!-- Opsi PG -->
+          <div id="bs-opsi-group">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div><label class="field-label">A</label><input id="bs-opsi-a" class="field-input" placeholder="Opsi A"></div>
+              <div><label class="field-label">B</label><input id="bs-opsi-b" class="field-input" placeholder="Opsi B"></div>
+              <div><label class="field-label">C</label><input id="bs-opsi-c" class="field-input" placeholder="Opsi C"></div>
+              <div><label class="field-label">D</label><input id="bs-opsi-d" class="field-input" placeholder="Opsi D"></div>
+            </div>
+          </div>
+          <div id="bs-kunci-group">
+            <label class="field-label">Kunci Jawaban</label>
+            <select id="bs-kunci" class="field-input" style="max-width:100px">
+              <option value="">—</option>
+              <option>A</option><option>B</option><option>C</option><option>D</option>
+            </select>
+          </div>
+          <!-- Tags -->
+          <div>
+            <label class="field-label">Tags (pisah koma)</label>
+            <input id="bs-tags" class="field-input" placeholder="UAS, HOTS, Ejaan">
+          </div>
+        </div>
+        <div style="padding:12px 22px 16px;border-top:1px solid var(--border);
+          display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;
+          background:var(--surface);backdrop-filter:blur(8px)">
+          <button class="btn btn-ghost" onclick="closeModal('modal-bank-soal')">Batal</button>
+          <button class="btn btn-primary" id="btn-save-bank-soal" onclick="saveBankSoal()">Simpan ke Bank</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Hapus per Mapel -->
+    <div class="modal-overlay" id="modal-hapus-mapel">
+      <div class="modal" style="max-width:420px;padding:0;overflow:hidden">
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);
+          background:linear-gradient(135deg,rgba(220,38,38,.06),transparent)">
+          <div class="modal-title">🗑 Hapus Soal per Mapel</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px">
+            Semua soal pada mapel yang dipilih akan dihapus permanen dari bank soal.
+          </div>
+        </div>
+        <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="field-label">Pilih Mata Pelajaran</label>
+            <select id="hapus-mapel-select" class="field-input" onchange="onHapusMapelChange()">
+              <option value="">-- Pilih mapel --</option>
+            </select>
+          </div>
+          <div id="hapus-mapel-info" style="display:none;
+            background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.15);
+            border-radius:8px;padding:12px 14px;font-size:12.5px">
+            <div style="font-weight:600;color:var(--red);margin-bottom:4px">⚠️ Konfirmasi Penghapusan</div>
+            <div style="color:var(--muted)">
+              Akan menghapus <strong id="hapus-mapel-count" style="color:var(--text)">0</strong> soal
+              dari mapel <strong id="hapus-mapel-name" style="color:var(--text)">—</strong>.
+            </div>
+            <div style="margin-top:6px;font-size:11.5px;color:var(--muted)">
+              Tindakan ini <strong style="color:var(--red)">tidak dapat dibatalkan</strong>.
+              Soal yang sudah dipakai di sesi CBT tidak akan terpengaruh.
+            </div>
+          </div>
+        </div>
+        <div style="padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="closeModal('modal-hapus-mapel')">Batal</button>
+          <button class="btn btn-danger" id="btn-hapus-mapel-confirm" disabled onclick="confirmHapusMapel()">
+            🗑 Hapus Semua Soal
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>

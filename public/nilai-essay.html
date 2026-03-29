@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Penilaian Essay — CBT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f18;--surface:#131722;--surface2:#1a2035;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --text:#e8eaf2;--muted:#5c6480;--dim:#8892b0;
+  --green:#34d399;--red:#f87171;--amber:#fbbf24;--blue:#60a5fa;--teal:#2dd4bf;
+  --gold:#f0b429;--radius:12px;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:20}
+.topbar-icon{font-size:22px}
+.topbar-info{flex:1}
+.topbar-info h1{font-size:15px;font-weight:700}
+.topbar-info p{font-size:11.5px;color:var(--muted)}
+.progress-ring{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+.progress-bar{width:120px;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--green));border-radius:3px;transition:width .4s}
+
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 57px)}
+
+/* ── Sidebar soal ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:16px;overflow-y:auto}
+.sidebar-title{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.7px;margin-bottom:12px}
+.soal-item{padding:10px 12px;border-radius:10px;cursor:pointer;margin-bottom:6px;
+  border:1px solid var(--border);transition:all .15s;background:var(--surface2)}
+.soal-item:hover{border-color:var(--border2)}
+.soal-item.active{border-color:var(--blue);background:rgba(96,165,250,.08)}
+.soal-item-no{font-size:10.5px;font-weight:700;color:var(--blue);font-family:var(--mono);margin-bottom:3px}
+.soal-item-text{font-size:12px;color:var(--dim);display:-webkit-box;-webkit-line-clamp:2;
+  line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden}
+.soal-item-progress{display:flex;align-items:center;gap:6px;margin-top:6px}
+.soal-item-pct{font-size:10px;color:var(--muted)}
+.mini-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.mini-fill{height:100%;border-radius:2px;background:var(--green);transition:width .3s}
+
+/* ── Main content ── */
+.main{padding:20px;overflow-y:auto}
+
+.soal-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 20px;margin-bottom:16px}
+.soal-header-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.badge-no{font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--blue);
+  background:rgba(96,165,250,.1);padding:3px 10px;border-radius:6px}
+.badge-bobot{font-family:var(--mono);font-size:11.5px;color:var(--gold);
+  background:rgba(240,180,41,.1);padding:3px 10px;border-radius:6px;margin-left:auto}
+.soal-text{font-size:15px;line-height:1.8;color:var(--text)}
+.soal-nav{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;
+  border-top:1px solid var(--border)}
+.progress-text{font-size:12px;color:var(--muted);flex:1}
+
+/* ── Jawaban cards ── */
+.jawaban-grid{display:flex;flex-direction:column;gap:12px}
+.jawaban-card{background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;transition:border-color .15s}
+.jawaban-card.sudah-dinilai{border-left:3px solid var(--green)}
+.jawaban-card.belum-dinilai{border-left:3px solid var(--border)}
+
+.jawaban-head{padding:10px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.02)}
+.siswa-name{font-weight:600;font-size:13px;flex:1}
+.siswa-email{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.nilai-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px}
+.nilai-badge.filled{background:rgba(52,211,153,.15);color:var(--green)}
+.nilai-badge.empty{background:rgba(255,255,255,.05);color:var(--muted)}
+
+.jawaban-body{padding:14px 16px}
+.jawaban-text{font-size:13.5px;line-height:1.8;color:var(--dim);
+  background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:12px;
+  white-space:pre-wrap;min-height:60px}
+.jawaban-text.kosong{color:var(--muted);font-style:italic}
+
+.nilai-row{display:flex;align-items:center;gap:10px}
+.nilai-label{font-size:12px;color:var(--muted);white-space:nowrap}
+.nilai-input{background:var(--surface2);border:1.5px solid var(--border2);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);
+  font-size:16px;font-weight:600;width:90px;text-align:center;
+  transition:border-color .15s}
+.nilai-input:focus{outline:none;border-color:var(--green)}
+.bobot-hint{font-size:11px;color:var(--muted)}
+.btn-simpan{padding:8px 16px;background:rgba(52,211,153,.15);border:1.5px solid rgba(52,211,153,.3);
+  border-radius:8px;color:var(--green);font-family:var(--sans);font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-simpan:hover{background:rgba(52,211,153,.25);border-color:var(--green)}
+.btn-simpan:disabled{opacity:.4;cursor:not-allowed}
+.btn-simpan.saved{background:rgba(52,211,153,.25);border-color:var(--green);color:var(--green)}
+
+/* Quick nilai buttons */
+.quick-nilai{display:flex;gap:5px;margin-right:8px}
+.qbtn{padding:5px 9px;font-size:11px;border-radius:6px;border:1px solid var(--border2);
+  background:var(--surface2);color:var(--dim);cursor:pointer;transition:all .1s;
+  font-family:var(--mono)}
+.qbtn:hover{background:rgba(96,165,250,.1);border-color:var(--blue);color:var(--blue)}
+
+.empty-state{padding:60px;text-align:center;color:var(--muted);font-size:13.5px}
+.empty-icon{font-size:36px;margin-bottom:12px;display:block}
+
+.toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;
+  animation:slideIn .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.toast-success{background:#0F6E56;color:#9FE1CB;border:1px solid rgba(45,212,191,.2)}
+.toast-error{background:#A32D2D;color:#F7C1C1;border:1px solid rgba(248,113,113,.2)}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:80px;gap:12px;color:var(--muted)}
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--blue);
+  border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── Filter bar ── */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--dim);font-size:12px;cursor:pointer;transition:all .15s}
+.filter-btn.act{border-color:var(--blue);background:rgba(96,165,250,.1);color:var(--blue);font-weight:600}
+.sort-label{font-size:12px;color:var(--muted);margin-left:auto}
+
+.export-bar {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+  position: sticky; bottom: 0; z-index: 10;
+}
+.btn-export {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 20px; border-radius: 10px; cursor: pointer;
+  font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+  transition: all .15s; border: 1.5px solid;
+}
+.btn-export-ready {
+  background: rgba(52,211,153,.15); border-color: rgba(52,211,153,.3);
+  color: var(--green);
+}
+.btn-export-ready:hover { background: rgba(52,211,153,.25); border-color: var(--green); }
+.btn-export-warn {
+  background: rgba(251,191,36,.1); border-color: rgba(251,191,36,.25);
+  color: var(--amber);
+}
+.btn-export-warn:hover { background: rgba(251,191,36,.2); border-color: var(--amber); }
+.export-info { font-size: 12px; color: var(--muted); flex: 1; }
+@media(max-width:700px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar" class="topbar">
+  <span class="topbar-icon">📝</span>
+  <div class="topbar-info">
+    <h1 id="tb-title">Penilaian Essay</h1>
+    <p id="tb-sub">Memuat...</p>
+  </div>
+  <div class="progress-ring">
+    <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <span id="prog-text">0%</span>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-title">Soal Essay</div>
+    <div id="soal-list"></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main" id="main">
+    <div class="loading"><div class="spin"></div>Memuat data...</div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+let _sessionId = '';
+let _session   = null;
+let _soalEssay = [];
+let _byNomor   = {};
+let _curNomor  = null;
+let _filter    = 'all'; // all | belum | sudah
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async function init() {
+  const params = new URLSearchParams(location.search);
+  _sessionId = params.get('session') || params.get('id') || '';
+
+  if (!_sessionId) {
+    // Tidak ada session ID — tampilkan pemilih sesi
+    await showSessionPicker();
+    return;
+  }
+
+  await loadSession();
+  await loadAnswers();
+})();
+
+async function showSessionPicker() {
+  // Sembunyikan layout normal, tampilkan picker
+  document.getElementById('topbar').querySelector('h1').textContent = 'Penilaian Essay';
+  document.getElementById('tb-sub').textContent = 'Pilih ujian yang ingin dinilai';
+  document.querySelector('.layout').style.display = 'none';
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'max-width:700px;margin:32px auto;padding:0 20px';
+  document.body.appendChild(wrap);
+
+  wrap.innerHTML = `<div class="loading"><div class="spin"></div>Memuat daftar ujian...</div>`;
+
+  try {
+    const r = await fetch('/api/nilai-essay/sessions');
+
+    // Jika redirect ke login (401/302) — middleware belum update
+    if (r.status === 401 || r.redirected) {
+      wrap.innerHTML = `<div class="empty-state">
+        <span class="empty-icon">🔒</span>
+        <div style="color:var(--red)">Akses ditolak (${r.status}) — middleware/auth.js belum diupdate</div>
+        <div style="font-size:11px;margin-top:6px;color:var(--muted)">Coba buka: <a href="/api/nilai-essay/sessions" target="_blank" style="color:var(--blue)">/api/nilai-essay/sessions</a></div>
+      </div>`;
+      return;
+    }
+
+    if (!r.ok) {
+      wrap.innerHTML = `<div class="empty-state">
+        <span class="empty-icon">❌</span>
+        <div>Error ${r.status} — endpoint tidak ditemukan</div>
+        <div style="font-size:11px;margin-top:6px;color:var(--muted)">routes/nilai-essay.js belum diupdate</div>
+      </div>`;
+      return;
+    }
+
+    const j = await r.json();
+    const sessions = (j.data || []);
+
+    if (!sessions.length) {
+      wrap.innerHTML = `<div class="empty-state">
+        <span class="empty-icon">📋</span>
+        <div>Belum ada sesi CBT di database</div>
+        <div style="font-size:11px;margin-top:6px;color:var(--muted)">Buat sesi CBT terlebih dahulu di CBT Manager</div>
+      </div>`;
+      return;
+    }
+
+    // Ambil progress per sesi (parallel)
+    const withProgress = await Promise.all(sessions.map(async s => {
+      try {
+        const pr = await fetch('/api/nilai-essay/session/' + s.id + '/progress');
+        const pj = await pr.json();
+        return { ...s, progress: pj.success ? pj : null };
+      } catch(_) { return { ...s, progress: null }; }
+    }));
+
+    // Filter yang punya soal essay dulu, sisanya tetap tampil tapi redup
+    const hasEssay = withProgress.filter(s => s.progress && s.progress.totalSoalEssay > 0);
+    const noEssay  = withProgress.filter(s => !s.progress || s.progress.totalSoalEssay === 0);
+
+    wrap.innerHTML = `
+      <div style="margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">📝 Pilih Ujian untuk Dinilai</div>
+        <div style="font-size:13px;color:var(--muted)">Klik ujian yang ingin Anda nilai essay-nya</div>
+      </div>
+
+      ${hasEssay.length ? '' : '<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--amber);margin-bottom:16px">⚠️ Tidak ada sesi yang punya soal essay saat ini</div>'}
+
+      ${hasEssay.map(s => {
+        const p = s.progress;
+        const done = p.pctDone >= 100;
+        const pct  = p.pctDone;
+        const isDeleted = s.status === 'deleted';
+        return `
+        <div onclick="window.location='/nilai-essay.html?session=${s.id}'"
+          style="background:var(--surface);border:1px solid ${done?'rgba(52,211,153,.3)':isDeleted?'rgba(251,191,36,.2)':'var(--border2)'};
+            border-radius:12px;padding:16px 20px;margin-bottom:10px;cursor:pointer;
+            transition:border-color .15s,background .15s"
+          onmouseover="this.style.background='rgba(255,255,255,.03)'"
+          onmouseout="this.style.background='var(--surface)'">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:14px;margin-bottom:3px">
+                ${esc(s.name)}
+                ${isDeleted ? '<span style="font-size:10px;color:var(--amber);background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);border-radius:4px;padding:1px 6px;margin-left:6px;font-weight:500">Sesi dihapus</span>' : ''}
+              </div>
+              <div style="font-size:12px;color:var(--muted)">${esc(s.mapel)} · ${esc(s.kelas||'')} · ${s.total_siswa||0} siswa · ${s.essay_jawaban_count||0} jawaban essay</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              ${done
+                ? '<span style="color:var(--green);font-size:12px;font-weight:600">✅ Selesai dinilai</span>'
+                : `<span style="color:var(--amber);font-size:12px;font-weight:600">${p.belumDinilai} belum dinilai</span>`}
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+            <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${done?'var(--green)':'linear-gradient(90deg,var(--teal),var(--green))'};border-radius:3px;transition:width .4s"></div>
+            </div>
+            <span style="font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap">
+              ${p.sudahDinilai}/${p.totalJawaban} (${pct}%)
+            </span>
+            <span style="font-size:11px;color:var(--muted)">${p.totalSoalEssay} soal essay</span>
+          </div>
+        </div>`;
+      }).join('')}
+
+      ${noEssay.length ? `
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
+          font-weight:600;margin:20px 0 10px">Sesi tanpa soal essay</div>
+        ${noEssay.map(s => `
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+            padding:12px 16px;margin-bottom:8px;opacity:.5">
+            <div style="font-size:13px;font-weight:600">${esc(s.name)}</div>
+            <div style="font-size:11.5px;color:var(--muted)">${esc(s.mapel)} · Tidak ada soal essay</div>
+          </div>`).join('')}` : ''}`;
+  } catch(e) {
+    wrap.innerHTML = `<div class="empty-state">
+      <span class="empty-icon">❌</span>
+      <div>Gagal memuat: ${e.message}</div></div>`;
+  }
+}
+
+async function loadSession() {
+  const r = await fetch(`/api/nilai-essay/session/${_sessionId}`);
+  const j = await r.json();
+  if (!j.success) throw new Error(j.error);
+
+  _session   = j.session;
+  _soalEssay = j.soalEssay || [];
+
+  document.getElementById('tb-title').textContent =
+    `Penilaian Essay — ${_session.mapel}`;
+  document.getElementById('tb-sub').textContent =
+    `${_session.name} · ${_session.kelas || ''} · ${_soalEssay.length} soal essay`;
+}
+
+async function loadAnswers() {
+  const r = await fetch(`/api/nilai-essay/session/${_sessionId}/answers`);
+  const j = await r.json();
+  if (!j.success) return;
+  _byNomor = j.byNomor || {};
+
+  renderSidebar();
+  updateProgress();
+
+  if (_soalEssay.length) {
+    if (_curNomor) renderMain(_curNomor);
+    else renderMain(_soalEssay[0].nomor);
+  } else {
+    document.getElementById('main').innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">📋</span>
+        <div>Tidak ada soal essay di sesi ini</div>
+      </div>`;
+  }
+}
+
+function renderSidebar() {
+  const el = document.getElementById('soal-list');
+  if (!_soalEssay.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">Tidak ada soal essay</div>'; return; }
+
+  el.innerHTML = _soalEssay.map(s => {
+    const data     = _byNomor[s.nomor];
+    const total    = data?.jawaban?.length || 0;
+    const dinilai  = data?.jawaban?.filter(j => j.nilai > 0).length || 0;
+    const pct      = total > 0 ? Math.round(dinilai/total*100) : 0;
+    const isActive = _curNomor === s.nomor;
+    return `
+    <div class="soal-item${isActive?' active':''}" onclick="renderMain(${s.nomor})">
+      <div class="soal-item-no">Soal ${s.nomor} · ${s.bobot} poin</div>
+      <div class="soal-item-text">${esc(s.soal)}</div>
+      <div class="soal-item-progress">
+        <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
+        <span class="soal-item-pct">${dinilai}/${total}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMain(nomor) {
+  _curNomor = nomor;
+  renderSidebar();
+
+  const soal = _soalEssay.find(s => s.nomor === nomor);
+  if (!soal) return;
+
+  const data    = _byNomor[nomor] || { jawaban: [] };
+  const idx     = _soalEssay.findIndex(s => s.nomor === nomor);
+  const total   = _soalEssay.length;
+  const dinilai = data.jawaban.filter(j => j.nilai > 0).length;
+
+  // Filter
+  let list = data.jawaban || [];
+  if (_filter === 'belum') list = list.filter(j => !j.nilai || j.nilai === 0);
+  if (_filter === 'sudah') list = list.filter(j => j.nilai > 0);
+
+  // Quick nilai options (25%, 50%, 75%, 100% of bobot)
+  const b   = soal.bobot || 10;
+  const qv  = [0, Math.round(b*0.25), Math.round(b*0.5), Math.round(b*0.75), b];
+
+  const el = document.getElementById('main');
+  el.innerHTML = `
+    <div class="soal-header">
+      <div class="soal-header-top">
+        <span class="badge-no">Soal ${nomor}</span>
+        <span class="badge-bobot">${b} poin</span>
+      </div>
+      <div class="soal-text">${esc(soal.soal)}</div>
+      <div class="soal-nav">
+        <span class="progress-text">${dinilai} dari ${data.jawaban.length} siswa sudah dinilai</span>
+        <button class="filter-btn${_filter==='all'?' act':''}" onclick="setFilter('all')">Semua</button>
+        <button class="filter-btn${_filter==='belum'?' act':''}" onclick="setFilter('belum')">Belum</button>
+        <button class="filter-btn${_filter==='sudah'?' act':''}" onclick="setFilter('sudah')">Sudah</button>
+        ${idx > 0        ? `<button class="filter-btn" onclick="renderMain(${_soalEssay[idx-1].nomor})">← Soal ${_soalEssay[idx-1].nomor}</button>` : ''}
+        ${idx < total-1  ? `<button class="filter-btn" style="border-color:var(--blue);color:var(--blue)" onclick="renderMain(${_soalEssay[idx+1].nomor})">Soal ${_soalEssay[idx+1].nomor} →</button>` : ''}
+      </div>
+    </div>
+
+    <div class="jawaban-grid" id="jawaban-grid">
+      ${!list.length
+        ? `<div class="empty-state"><span class="empty-icon">📭</span>
+             <div>${_filter==='belum'?'Semua sudah dinilai':'Belum ada jawaban'}</div></div>`
+        : list.map((j,i) => `
+          <div class="jawaban-card ${j.nilai>0?'sudah-dinilai':'belum-dinilai'}" id="card-${i}">
+            <div class="jawaban-head">
+              <div>
+                <div class="siswa-name">${esc(j.user_name || j.user_email)}</div>
+                <div class="siswa-email">${esc(j.user_email)}</div>
+              </div>
+              ${j.nilai > 0
+                ? `<span class="nilai-badge filled">Nilai: ${j.nilai} / ${b}</span>`
+                : `<span class="nilai-badge empty">Belum dinilai</span>`}
+            </div>
+            <div class="jawaban-body">
+              <div class="jawaban-text ${!j.jawaban ? 'kosong' : ''}">${j.jawaban ? esc(j.jawaban) : '(Tidak menjawab)'}</div>
+              <div class="nilai-row">
+                <span class="nilai-label">Nilai:</span>
+                <div class="quick-nilai">
+                  ${qv.map(v => `<button class="qbtn" onclick="setNilai(${i},${v},${j.nomor},'${j.user_email}',${b})">${v}</button>`).join('')}
+                </div>
+                <input class="nilai-input" id="inp-${i}" type="number" min="0" max="${b}"
+                  value="${j.nilai||''}" placeholder="0"
+                  onchange="simpanNilai(${i},${j.nomor},'${j.user_email}',${b})">
+                <span class="bobot-hint">/ ${b}</span>
+                <button class="btn-simpan ${j.nilai>0?'saved':''}" id="btn-${i}"
+                  onclick="simpanNilai(${i},${j.nomor},'${j.user_email}',${b})">
+                  ${j.nilai>0?'✓ Tersimpan':'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>`
+        ).join('')}
+    </div>`;
+}
+
+function setFilter(f) {
+  _filter = f;
+  if (_curNomor) renderMain(_curNomor);
+}
+
+function setNilai(cardIdx, val, nomor, email, bobot) {
+  const inp = document.getElementById(`inp-${cardIdx}`);
+  if (inp) { inp.value = val; simpanNilai(cardIdx, nomor, email, bobot); }
+}
+
+async function simpanNilai(cardIdx, nomor, email, bobot) {
+  const inp = document.getElementById(`inp-${cardIdx}`);
+  const btn = document.getElementById(`btn-${cardIdx}`);
+  if (!inp) return;
+
+  const val = parseFloat(inp.value);
+  if (isNaN(val) || val < 0 || val > bobot) {
+    toast(`Nilai harus antara 0 dan ${bobot}`, 'error'); return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+
+  try {
+    const r = await fetch(`/api/nilai-essay/session/${_sessionId}/nilai`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userEmail: email, nomor, nilai: val }),
+    });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error);
+
+    // Update local data
+    const entry = (_byNomor[nomor]?.jawaban || []).find(x => x.user_email === email);
+    if (entry) entry.nilai = val;
+
+    if (btn) { btn.textContent = '✓ Tersimpan'; btn.classList.add('saved'); btn.disabled = false; }
+    // Update card border
+    const card = document.getElementById(`card-${cardIdx}`);
+    if (card) { card.classList.remove('belum-dinilai'); card.classList.add('sudah-dinilai'); }
+
+    updateProgress();
+    renderSidebar();
+    toast('Nilai disimpan', 'success');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Simpan'; }
+    toast('Gagal menyimpan: ' + e.message, 'error');
+  }
+}
+
+async function updateProgress() {
+  try {
+    const r = await fetch(`/api/nilai-essay/session/${_sessionId}/progress`);
+    const j = await r.json();
+    if (!j.success) return;
+    document.getElementById('prog-fill').style.width  = j.pctDone + '%';
+    document.getElementById('prog-text').textContent  =
+      `${j.sudahDinilai}/${j.totalJawaban} (${j.pctDone}%)`;
+  } catch(_) {}
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ── Export ke Google Sheets ───────────────────────────────────────────────────
+let _exportProgress = { total: 0, done: 0, pctDone: 0, belumDinilai: 0, totalSoalEssay: 0 };
+
+function updateExportBar(progress) {
+  if (!_sessionId) return;
+  const bar  = document.getElementById('export-bar');
+  const info = document.getElementById('export-info');
+  const btn  = document.getElementById('btn-export');
+  if (!bar) return;
+  bar.style.display = 'flex';
+  _exportProgress   = progress;
+  if (progress.pctDone >= 100 || progress.totalSoalEssay === 0) {
+    info.innerHTML = progress.totalSoalEssay === 0
+      ? '<span style="color:var(--muted)">Tidak ada soal essay</span>'
+      : '<span style="color:var(--green)">✅ Semua essay sudah dinilai — siap export</span>';
+    btn.className  = 'btn-export btn-export-ready';
+  } else {
+    info.innerHTML = `<span style="color:var(--amber)">⚠️ ${progress.belumDinilai} jawaban essay belum dinilai</span>`;
+    btn.className  = 'btn-export btn-export-warn';
+  }
+}
+
+async function doExport() {
+  if (!_sessionId) return;
+  if (_exportProgress.pctDone < 100 && _exportProgress.totalSoalEssay > 0) {
+    const ok = confirm(
+      `Masih ada ${_exportProgress.belumDinilai} jawaban essay belum dinilai.\n` +
+      `Nilai essay yang belum diisi akan diekspor sebagai 0.\n\nTetap export sekarang?`
+    );
+    if (!ok) return;
+  }
+  const btn = document.getElementById('btn-export');
+  btn.disabled  = true;
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:currentColor;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle"></span> Membuat Spreadsheet...';
+  try {
+    const r = await fetch(`/api/nilai-essay/session/${_sessionId}/export-sheets`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    });
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error(await r.text().then(t => t.slice(0,200)));
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error);
+    window.open(j.url, '_blank');
+    toast('Spreadsheet berhasil dibuat!', 'success');
+    btn.innerHTML = '✅ Berhasil — Buka lagi';
+    btn.disabled  = false;
+  } catch(e) {
+    toast('Gagal export: ' + e.message, 'error');
+    btn.disabled  = false;
+    btn.innerHTML = '📊 Export ke Google Sheets';
+  }
+}
+
+// Patch updateProgress agar juga update export bar
+async function updateProgress() {
+  if (!_sessionId) return;
+  try {
+    const r = await fetch(`/api/nilai-essay/session/${_sessionId}/progress`);
+    const j = await r.json();
+    if (!j.success) return;
+    document.getElementById('prog-fill').style.width = j.pctDone + '%';
+    document.getElementById('prog-text').textContent =
+      `${j.sudahDinilai}/${j.totalJawaban} (${j.pctDone}%)`;
+    updateExportBar(j);
+  } catch(_) {}
+}
+</script>
+<div class="export-bar" id="export-bar" style="display:none">
+  <span class="export-info" id="export-info"></span>
+  <button class="btn-export btn-export-warn" id="btn-export" onclick="doExport()">
+    📊 Export ke Google Sheets
+  </button>
+</div>
+
+</body>
+</html>

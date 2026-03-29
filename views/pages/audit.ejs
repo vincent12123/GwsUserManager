@@ -1,0 +1,59 @@
+  <!-- ── AUDIT LOG PAGE ── -->
+  <div class="page" id="page-audit">
+    <div class="card">
+      <!-- Toolbar filter -->
+      <div class="toolbar" style="flex-wrap:wrap;gap:8px">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="audit-search"
+            placeholder="Cari email atau target..." oninput="filterAudit()">
+        </div>
+        <select id="audit-action-filter" class="field-input" style="width:200px;padding:8px 12px" onchange="filterAudit()">
+          <option value="">Semua Aksi</option>
+          <option value="Hapus User">Hapus User</option>
+          <option value="Ganti Lisensi (Archive)">Ganti Lisensi (Archive)</option>
+          <option value="Ganti Lisensi (Restore)">Ganti Lisensi (Restore)</option>
+          <option value="Nonaktifkan Guru">Nonaktifkan Guru</option>
+          <option value="Transfer Drive">Transfer Drive</option>
+        </select>
+        <select id="audit-status-filter" class="field-input" style="width:130px;padding:8px 12px" onchange="filterAudit()">
+          <option value="">Semua Status</option>
+          <option value="success">Sukses</option>
+          <option value="error">Error</option>
+          <option value="warning">Warning</option>
+        </select>
+        <button class="btn btn-ghost" onclick="loadAuditLog()">⟳ Refresh</button>
+        <button class="btn btn-danger" onclick="confirmClearAudit()" style="margin-left:auto">
+          🗑 Hapus Log Lama
+        </button>
+      </div>
+      <!-- Tabel -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Waktu</th>
+              <th>Aksi</th>
+              <th>Target</th>
+              <th>Detail</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody">
+            <tr><td colspan="5" class="state-box">
+              <div class="state-emoji">📋</div>
+              <div class="state-title">Klik Refresh untuk memuat log</div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div style="padding:12px 20px;display:flex;align-items:center;gap:12px;border-top:1px solid var(--border);background:var(--surface2)">
+        <span style="font-size:12px;color:var(--muted)" id="audit-count-info">-</span>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-ghost" id="audit-prev-btn" onclick="auditPrev()" disabled>← Sebelumnya</button>
+          <button class="btn btn-ghost" id="audit-next-btn" onclick="auditNext()" disabled>Berikutnya →</button>
+        </div>
+      </div>
+    </div>
+  </div>

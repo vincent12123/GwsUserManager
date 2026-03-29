@@ -1,0 +1,127 @@
+<!-- JS Modules (sama seperti di index.html asli) -->
+<script src="/js/utils.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/navigation.js"></script>
+<script src="/js/dashboard.js"></script>
+<script src="/js/users.js"></script>
+<script src="/js/bulk.js"></script>
+<script src="/js/bulk-actions.js"></script>
+<script src="/js/classroom.js"></script>
+<script src="/js/phase3.js"></script>
+<script src="/js/audit.js"></script>
+<script src="/js/content.js"></script>
+<script src="/js/forms.js"></script>
+<script src="/js/security.js"></script>
+<script src="/js/cbt.js"></script>
+<script src="/js/mcp.js"></script>
+<script src="/js/drive-audit.js"></script>
+<script src="/js/cbt-package.js"></script>
+<script src="/js/admin-users.js"></script>
+<script src="/js/bank.js"></script>
+<script src="/js/sspr.js"></script>
+
+<script>
+// ── AUTH INIT ─────────────────────────────────────────────────────────────────
+const _ROLE_LABELS = { super_admin: 'Super Admin', operator: 'Operator', guru: 'Guru' };
+const _ROLE_COLORS = { super_admin: '#f87171', operator: '#60a5fa', guru: '#34d399' };
+
+async function initAuth() {
+  try {
+    const r = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!r.ok) { window.location = '/login.html'; return; }
+    const j = await r.json();
+    if (!j.success) { window.location = '/login.html'; return; }
+
+    const u = j.user;
+    document.getElementById('usr-name').textContent = u.name;
+    document.getElementById('usr-role').textContent = _ROLE_LABELS[u.role] || u.role;
+    document.getElementById('usr-role').style.color = _ROLE_COLORS[u.role] || 'rgba(255,255,255,.3)';
+
+    // Sembunyikan menu yang tidak diizinkan
+    const allowed = u.menus || [];
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      const onclick = btn.getAttribute('onclick') || '';
+      const match   = onclick.match(/navigate\('(\w+)'\)/);
+      if (match && !allowed.includes(match[1])) {
+        btn.style.display = 'none';
+      }
+    });
+
+    // Force change password
+    const params = new URLSearchParams(location.search);
+    if (u.forceChange || params.get('forceChange')) {
+      showChangePasswordModal();
+    }
+
+    // ←←← INI YANG BARU DITAMBAHKAN
+    // Setelah auth berhasil, langsung load halaman pertama (dashboard)
+    loadDashboard();
+
+  } catch(e) {
+    window.location = '/login.html';
+  }
+}
+
+async function doLogout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location = '/login.html';
+}
+
+// ── Modal ganti password ───────────────────────────────────────────────────────
+function showChangePasswordModal() {
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-change-pass';
+  overlay.className = 'modal-overlay open';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:400px;padding:0;overflow:hidden">
+      <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);
+        background:linear-gradient(135deg,rgba(251,191,36,.06),transparent)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:2px">🔑 Ganti Password</div>
+        <div style="font-size:12px;color:var(--muted)">Password Anda perlu diganti sebelum melanjutkan</div>
+      </div>
+      <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+        <div><label class="field-label">Password Lama</label>
+          <input id="cp-old" class="field-input" type="password" placeholder="Password saat ini"></div>
+        <div><label class="field-label">Password Baru</label>
+          <input id="cp-new" class="field-input" type="password" placeholder="Min. 6 karakter"></div>
+        <div><label class="field-label">Konfirmasi</label>
+          <input id="cp-confirm" class="field-input" type="password" placeholder="Ulangi password baru"></div>
+        <div id="cp-err" style="color:var(--red);font-size:12px;display:none"></div>
+      </div>
+      <div style="padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="submitChangePassword()">🔑 Simpan Password</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function submitChangePassword() {
+  const oldP    = document.getElementById('cp-old').value;
+  const newP    = document.getElementById('cp-new').value;
+  const confirm = document.getElementById('cp-confirm').value;
+  const err     = document.getElementById('cp-err');
+  err.style.display = 'none';
+  if (!oldP || !newP) { err.textContent='Semua field wajib'; err.style.display='block'; return; }
+  if (newP !== confirm) { err.textContent='Konfirmasi tidak cocok'; err.style.display='block'; return; }
+  if (newP.length < 6) { err.textContent='Minimal 6 karakter'; err.style.display='block'; return; }
+  try {
+    const r = await fetch('/api/auth/change-password', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ currentPassword: oldP, newPassword: newP, confirm }),
+      credentials: 'include',
+    });
+    const j = await r.json();
+    if (!j.success) { err.textContent=j.error; err.style.display='block'; return; }
+    document.getElementById('modal-change-pass').remove();
+    toast('Password berhasil diubah', 'success');
+    // Hapus param dari URL
+    history.replaceState({}, '', location.pathname);
+  } catch(e) { err.textContent='Gagal: '+e.message; err.style.display='block'; }
+}
+
+// Jalankan saat halaman load
+
+initAuth();
+</script>
+</body>
+</html>

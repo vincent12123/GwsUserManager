@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Login — GWS Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0f18;--surface:#131722;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#e8eaf2;--muted:#5c6480;--dim:#8892b0;--blue:#60a5fa;--green:#34d399;--red:#f87171;--gold:#f0b429;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background-image:radial-gradient(ellipse 60% 50% at 30% 20%,rgba(96,165,250,.05),transparent),
+    radial-gradient(ellipse 50% 60% at 70% 80%,rgba(45,212,191,.04),transparent)}
+
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:400px;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04)}
+
+.card-head{padding:28px 28px 22px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(96,165,250,.06),transparent);text-align:center}
+.logo{width:52px;height:52px;background:linear-gradient(135deg,var(--blue),#3b82f6);
+  border-radius:14px;display:inline-flex;align-items:center;justify-content:center;
+  font-size:24px;margin-bottom:14px;box-shadow:0 8px 20px rgba(96,165,250,.25)}
+h1{font-size:17px;font-weight:700;margin-bottom:3px}
+.sub{font-size:12px;color:var(--muted)}
+
+.card-body{padding:24px 28px 28px;display:flex;flex-direction:column;gap:16px}
+.field-label{font-size:10.5px;font-weight:700;color:var(--dim);text-transform:uppercase;
+  letter-spacing:.7px;display:block;margin-bottom:6px}
+.field-input{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);
+  border:1.5px solid var(--border2);border-radius:10px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .2s,box-shadow .2s}
+.field-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(96,165,250,.12)}
+.field-input::placeholder{color:var(--muted)}
+
+.btn-login{width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--blue),#3b82f6);color:#fff;
+  border:none;border-radius:10px;font-family:'DM Sans',sans-serif;
+  font-size:14.5px;font-weight:600;cursor:pointer;
+  box-shadow:0 4px 16px rgba(96,165,250,.3);transition:opacity .15s,transform .1s}
+.btn-login:hover{opacity:.92}
+.btn-login:active{transform:scale(.98)}
+.btn-login:disabled{opacity:.4;cursor:not-allowed}
+
+.err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);
+  border-radius:8px;padding:10px 14px;color:var(--red);font-size:12.5px;
+  text-align:center;display:none}
+
+.links{text-align:center;padding:0 28px 20px;font-size:12px;color:var(--muted)}
+.links a{color:var(--blue);text-decoration:none}
+
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-head">
+    <div class="logo">🏫</div>
+    <h1>GWS Manager</h1>
+    <div class="sub">SMK Karya Bangsa Sintang</div>
+  </div>
+  <div class="card-body">
+    <div id="err-msg" class="err"></div>
+    <div>
+      <label class="field-label">Email Sekolah</label>
+      <input id="inp-email" class="field-input" type="email"
+        placeholder="nama@<%= school.SCHOOL_DOMAIN %>" autocomplete="email">
+    </div>
+    <div>
+      <label class="field-label">Password</label>
+      <input id="inp-pass" class="field-input" type="password"
+        placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Masuk</button>
+  </div>
+  <div class="links">
+    Pengawas CBT? Gunakan link monitor dari koordinator<br>
+    <a href="/nilai-essay.html">Nilai Essay Siswa →</a>
+  </div>
+</div>
+
+<script>
+async function doLogin() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const btn   = document.getElementById('btn-login');
+  const err   = document.getElementById('err-msg');
+  err.style.display = 'none';
+
+  if (!email || !pass) { showErr('Email dan password wajib diisi'); return; }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Memverifikasi...';
+
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+      credentials: 'include',
+    });
+    const j = await r.json();
+
+    if (!j.success) { showErr(j.error || 'Login gagal'); return; }
+
+    // Force change password
+    if (j.forceChange) {
+      window.location = '/index.html?forceChange=1';
+    } else {
+      window.location = '/';
+    }
+  } catch(e) {
+    showErr('Gagal terhubung ke server');
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = 'Masuk';
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err-msg');
+  el.textContent    = msg;
+  el.style.display  = 'block';
+  document.getElementById('btn-login').disabled  = false;
+  document.getElementById('btn-login').innerHTML = 'Masuk';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>

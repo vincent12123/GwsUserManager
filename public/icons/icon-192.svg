@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="38.400000000000006" fill="#131722"/>
+  <rect x="19.200000000000003" y="19.200000000000003" width="153.60000000000002" height="153.60000000000002" rx="28.799999999999997" fill="#1a2035"/>
+  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
+    font-size="86.4" font-family="sans-serif">📝</text>
+  <text x="50%" y="82%" dominant-baseline="middle" text-anchor="middle"
+    font-size="19.200000000000003" font-family="sans-serif" fill="#60a5fa" font-weight="bold">CBT</text>
+</svg>

@@ -1,0 +1,214 @@
+  <!-- ── SECURITY PAGE ── -->
+  <div class="page" id="page-security">
+
+    <!-- Tab bar -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap">
+      <button class="btn cbt-tab-btn active" id="sec-tab-devices"    onclick="switchSecTab('devices')"   >📱 Device Audit</button>
+      <button class="btn cbt-tab-btn"        id="sec-tab-login"      onclick="switchSecTab('login')"     >🔐 Login Activity</button>
+      <button class="btn cbt-tab-btn"        id="sec-tab-storage"    onclick="switchSecTab('storage')"   >💾 Drive & Storage</button>
+      <button class="btn cbt-tab-btn"        id="sec-tab-usage"      onclick="switchSecTab('usage')"     >📊 Resource Usage</button>
+      <button class="btn cbt-tab-btn"        id="sec-tab-sharing"    onclick="switchSecTab('sharing')"   >🔗 Sharing Alerts</button>
+      <button class="btn cbt-tab-btn"        id="sec-tab-driveact"   onclick="switchSecTab('driveact')"  >📋 Drive Activity</button>
+    </div>
+
+    <!-- TAB: Device Audit -->
+    <div id="sec-content-devices" class="sec-tab-content">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px;font-weight:700">📱 Device Audit</div>
+            <div class="card-sub-t">Perangkat mobile yang terhubung ke domain</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadDevices()">⟳ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>User</th><th>Perangkat / OS</th><th>Tipe</th>
+              <th style="text-align:center">Sync Terakhir</th>
+              <th style="text-align:center">Status</th>
+              <th style="text-align:center">Aksi</th>
+            </tr></thead>
+            <tbody id="devices-tbody">
+              <tr><td colspan="6" class="state-box">
+                <div class="state-emoji">📱</div>
+                <div class="state-title">Klik Refresh untuk memuat perangkat</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Login Activity -->
+    <div id="sec-content-login" class="sec-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px;font-weight:700">🔐 Login Activity</div>
+            <div class="card-sub-t">Aktivitas login domain</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <select id="activity-hours" class="field-input" style="width:140px;padding:6px 10px">
+              <option value="6">6 jam terakhir</option>
+              <option value="24" selected>24 jam terakhir</option>
+              <option value="48">48 jam terakhir</option>
+              <option value="168">7 hari terakhir</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadLoginActivity()">⟳ Refresh</button>
+            <button class="btn btn-ghost" onclick="loadSuspiciousOnly()" style="color:var(--red);border-color:var(--red)">⚠ Mencurigakan</button>
+          </div>
+        </div>
+        <div id="activity-summary" style="display:none;padding:12px 16px;display:flex;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--border)"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Waktu</th><th>User</th><th>IP Address</th>
+              <th style="text-align:center">Lokasi</th>
+              <th>Event</th><th style="text-align:center">Status</th>
+            </tr></thead>
+            <tbody id="activity-tbody">
+              <tr><td colspan="6" class="state-box">
+                <div class="state-emoji">🔐</div>
+                <div class="state-title">Klik Refresh untuk memuat aktivitas</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Drive & Storage -->
+    <div id="sec-content-storage" class="sec-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px;font-weight:700">💾 Drive & Storage</div>
+            <div class="card-sub-t">Penggunaan kuota Drive + Gmail + Photos per user</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="storage-search" class="field-input" style="width:220px;padding:6px 10px" placeholder="Cari user...">
+            <button class="btn btn-ghost" onclick="loadStorage()">⟳ Refresh</button>
+          </div>
+        </div>
+        <div id="storage-summary" style="display:none"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>User</th>
+              <th style="text-align:right">Drive</th>
+              <th style="text-align:right">Gmail</th>
+              <th style="text-align:right">Photos</th>
+              <th style="text-align:right">Total</th>
+              <th>Kuota</th>
+            </tr></thead>
+            <tbody id="storage-tbody">
+              <tr><td colspan="6" class="state-box">
+                <div class="state-emoji">💾</div>
+                <div class="state-title">Klik Refresh untuk memuat data storage</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Resource Usage -->
+    <div id="sec-content-usage" class="sec-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px;font-weight:700">📊 Resource Usage</div>
+            <div class="card-sub-t">Aktivitas Drive, Gmail, Meet per user</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadResourceUsage()">⟳ Refresh</button>
+        </div>
+        <div id="usage-domain-stats" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;flex-wrap:wrap"></div>
+        <div style="padding:0 16px 16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:16px">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Top Drive Aksi</div>
+              <div id="usage-drive-list" style="display:flex;flex-direction:column;gap:4px"></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Top Email Sent</div>
+              <div id="usage-email-list" style="display:flex;flex-direction:column;gap:4px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- TAB: Sharing Alerts -->
+    <div id="sec-content-sharing" class="sec-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px;font-weight:700">🔗 Sharing Alerts</div>
+            <div class="card-sub-t">User yang share file ke luar domain (usage report)</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="loadSharingAlerts()">⟳ Refresh</button>
+          </div>
+        </div>
+        <div id="sharing-alert-strip" style="display:none;padding:10px 16px;margin:0 16px 12px;border-radius:8px;border-left:3px solid var(--red);background:rgba(248,113,113,.08);font-size:13px;color:var(--red)"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>User</th>
+              <th style="text-align:center">Shared External</th>
+              <th style="text-align:center">Anyone with Link</th>
+              <th style="text-align:center">Public</th>
+              <th style="text-align:center">Total</th>
+            </tr></thead>
+            <tbody id="sharing-tbody">
+              <tr><td colspan="5" class="state-box">
+                <div class="state-emoji">🔗</div>
+                <div class="state-title">Klik Refresh untuk memuat sharing alerts</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Drive Activity -->
+    <div id="sec-content-driveact" class="sec-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px;font-weight:700">📋 Drive Activity</div>
+            <div class="card-sub-t">Log lengkap aktivitas Google Drive</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="driveact-event" class="field-input" style="width:140px;padding:6px 10px">
+              <option value="all">Semua event</option>
+              <option value="upload">Upload</option>
+              <option value="delete">Delete</option>
+              <option value="acl_change">Share</option>
+              <option value="download">Download</option>
+              <option value="edit">Edit</option>
+            </select>
+            <input id="driveact-date" type="date" class="field-input" style="width:150px;padding:6px 10px">
+            <button class="btn btn-ghost" onclick="loadDriveActivity()">⟳ Refresh</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Waktu</th><th>User</th><th>File</th>
+              <th style="text-align:center">Event</th><th style="text-align:center">Risiko</th>
+            </tr></thead>
+            <tbody id="driveact-tbody">
+              <tr><td colspan="5" class="state-box">
+                <div class="state-emoji">📋</div>
+                <div class="state-title">Klik Refresh untuk memuat drive activity</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>

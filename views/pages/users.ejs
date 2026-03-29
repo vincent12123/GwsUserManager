@@ -1,0 +1,62 @@
+ <!-- ── USERS PAGE ── -->
+  <div class="page" id="page-users">
+    <div class="card">
+      <!-- Toolbar baris 1: Search + Filter OU -->
+      <div class="toolbar" style="flex-wrap:wrap;gap:8px">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="user-search" placeholder="Cari nama atau email..." oninput="filterUsers()">
+        </div>
+        <select id="ou-filter" class="field-input" style="width:220px;padding:8px 12px" onchange="filterUsers()">
+          <option value="">Semua Org Unit</option>
+        </select>
+        <select id="status-filter" class="field-input" style="width:140px;padding:8px 12px" onchange="filterUsers()">
+          <option value="">Semua Status</option>
+          <option value="active">Aktif</option>
+          <option value="suspended">Suspended</option>
+          <option value="archived">Archived</option>
+        </select>
+        <button class="btn btn-ghost" onclick="clearFilters()">✕ Reset</button>
+      </div>
+      <!-- Toolbar baris 2: Actions -->
+      <div class="toolbar" style="border-top:none;padding-top:0;flex-wrap:wrap;gap:8px">
+        <span style="font-size:11px;color:var(--muted)" id="user-count-info">-</span>
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="loadUsers()">⟳ Refresh</button>
+          <button class="btn btn-ghost" onclick="navigate('bulk')">📋 Bulk Tambah</button>
+          <button class="btn btn-ghost" onclick="openDeactivateTeacher()" style="color:#7C3AED;border-color:#7C3AED">⛔ Nonaktifkan Guru</button>
+          <button class="btn btn-ghost" onclick="openBulkMoveOU()" style="color:var(--amber);border-color:var(--amber)">📂 Pindah OU</button>
+          <button class="btn btn-ghost" onclick="openBulkLicense()" style="color:var(--accent);border-color:var(--accent)">🔖 Ganti Lisensi</button>
+          <button class="btn btn-danger" onclick="openBulkDelete()">🗑 Bulk Hapus</button>
+          <button class="btn btn-primary" onclick="openUserModal()">+ Tambah User</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortUsers('name')" style="cursor:pointer;user-select:none">
+                Nama / Email <span id="sort-name" style="opacity:.4">↕</span>
+              </th>
+              <th onclick="sortUsers('ou')" style="cursor:pointer;user-select:none">
+                Org Unit <span id="sort-ou" style="opacity:.4">↕</span>
+              </th>
+              <th onclick="sortUsers('status')" style="cursor:pointer;user-select:none">
+                Status <span id="sort-status" style="opacity:.4">↕</span>
+              </th>
+              <th onclick="sortUsers('date')" style="cursor:pointer;user-select:none">
+                Dibuat <span id="sort-date" style="opacity:.4">↕</span>
+              </th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="5" class="state-box">
+              <div class="state-emoji">👆</div>
+              <div class="state-title">Klik Refresh untuk memuat data</div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Monitor Ruang — CBT</title>
+<style>
+:root {
+  --bg:#0c0f18; --surface:#131722; --surface2:#1a2035;
+  --border:rgba(255,255,255,.07); --border2:rgba(255,255,255,.12);
+  --text:#e8eaf2; --muted:#5c6480; --dim:#8892b0;
+  --green:#34d399; --red:#f87171; --amber:#fbbf24; --blue:#60a5fa; --teal:#2dd4bf;
+  --radius:12px; --mono:'DM Mono',monospace; --sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
+.hdr-left h1{font-size:15px;font-weight:700}
+.hdr-left p{font-size:11.5px;color:var(--muted);margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.badge-status{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;
+  background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.25);color:var(--green)}
+.badge-status.ended{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.25);color:var(--red)}
+.badge-status.draft{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.25);color:var(--blue)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  animation:pulse 1.5s ease-in-out infinite;display:inline-block;margin-right:5px}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.body{padding:20px;max-width:900px;margin:0 auto}
+.summary-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;text-align:center}
+.sc-num{font-size:28px;font-weight:800;line-height:1;font-family:var(--mono)}
+.sc-lbl{font-size:11px;color:var(--muted);margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.card-title{padding:12px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:space-between}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{padding:8px 14px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;
+  padding:2px 8px;border-radius:20px}
+.pill-green{background:rgba(52,211,153,.12);color:var(--green)}
+.pill-amber{background:rgba(251,191,36,.12);color:var(--amber)}
+.pill-red{background:rgba(248,113,113,.12);color:var(--red)}
+.pill-blue{background:rgba(96,165,250,.12);color:var(--blue)}
+.pill-gray{background:rgba(255,255,255,.05);color:var(--dim)}
+.cheat-row{background:rgba(248,113,113,.04)}
+.empty{padding:24px;text-align:center;color:var(--muted);font-size:12.5px}
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--blue);
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.token-revealed { filter: blur(0) !important; }
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px;gap:12px;color:var(--muted);font-size:13px}
+.err-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);
+  border-radius:var(--radius);padding:20px;text-align:center;color:var(--red);font-size:13px}
+.refresh-info{font-size:11px;color:var(--muted);text-align:right;margin-bottom:8px}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <h1 id="hdr-title">Monitor Ruang CBT</h1>
+    <p id="hdr-sub">Memuat data...</p>
+  </div>
+  <div class="hdr-right">
+    <span class="badge-status" id="status-badge">⏳ Loading</span>
+    <div id="token-box" style="display:none;align-items:center;gap:8px;background:var(--surface2);
+      border:1px solid var(--border2);border-radius:8px;padding:6px 12px">
+      <span style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Token Siswa</span>
+      <span id="token-val" style="font-family:var(--mono);font-size:18px;font-weight:700;
+        color:var(--gold);letter-spacing:6px;filter:blur(6px);cursor:pointer;transition:filter .2s"
+        onclick="toggleToken()" title="Klik untuk tampilkan/sembunyikan">••••••</span>
+      <button onclick="toggleToken()" style="font-size:11px;background:rgba(240,180,41,.1);
+        border:1px solid rgba(240,180,41,.2);color:var(--gold);border-radius:5px;
+        padding:2px 8px;cursor:pointer" id="btn-show-token">👁 Tampilkan</button>
+      <button onclick="doRotateToken()" style="font-size:11px;background:rgba(96,165,250,.1);
+        border:1px solid rgba(96,165,250,.2);color:var(--blue);border-radius:5px;
+        padding:2px 8px;cursor:pointer" id="btn-rotate">🔄 Ganti Token</button>
+    </div>
+    <span style="font-size:11px;color:var(--muted)" id="last-refresh"></span>
+  </div>
+</div>
+
+<div class="body">
+  <div id="main-content">
+    <div class="loading">
+      <div class="spin"></div>
+      <span>Memuat data ruang...</span>
+    </div>
+  </div>
+</div>
+
+<script>
+let _ptoken = null;
+let _data   = null;
+let _itv    = null;
+
+// Ambil token dari URL: /monitor-ruang?token=PXXXXX
+function getToken() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('token') || params.get('t') || '';
+}
+
+async function loadData() {
+  const token = _ptoken || getToken();
+  if (!token) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="err-box">Token pengawas tidak ditemukan di URL.<br>
+       Format: <code>/monitor-ruang?token=PXXXXX</code></div>`;
+    return;
+  }
+  _ptoken = token;
+
+  try {
+    const r = await fetch(`/api/cbt-package/pengawas/${token}`);
+    const j = await r.json();
+    if (!j.success) {
+      document.getElementById('main-content').innerHTML =
+        `<div class="err-box">❌ ${j.error || 'Token tidak valid'}</div>`;
+      return;
+    }
+    _data = j.data;
+    render(_data);
+    document.getElementById('last-refresh').textContent =
+      'Update: ' + new Date().toLocaleTimeString('id-ID');
+  } catch(e) {
+    if (!_data) {
+      document.getElementById('main-content').innerHTML =
+        `<div class="err-box">❌ Gagal terhubung ke server</div>`;
+    }
+  }
+}
+
+function statusPill(status) {
+  if (status === 'submitted') return `<span class="pill pill-green">✅ Selesai</span>`;
+  if (status === 'active')    return `<span class="pill pill-blue">✏️ Sedang Ujian</span>`;
+  if (status === 'enrolled')  return `<span class="pill pill-gray">⏳ Menunggu</span>`;
+  return `<span class="pill pill-gray">${status}</span>`;
+}
+
+function cheatPill(count) {
+  if (!count) return `<span style="color:var(--muted)">—</span>`;
+  if (count >= 3) return `<span class="pill pill-red">🚨 ${count}x</span>`;
+  return `<span class="pill pill-amber">⚠️ ${count}x</span>`;
+}
+
+function riskPill(risk) {
+  if (!risk || risk === 'safe' || risk === 'local') return '';
+  if (risk === 'vpn') return `<span class="pill pill-red">VPN</span>`;
+  if (risk === 'overseas') return `<span class="pill pill-red">Luar Negeri</span>`;
+  if (risk === 'outside_region') return `<span class="pill pill-amber">Luar Kalbar</span>`;
+  return '';
+}
+
+function render(data) {
+  const { room, pkg, participants, cheats, totalSoal } = data;
+  const joined     = participants.length;
+  const submitted  = participants.filter(p => p.status === 'submitted').length;
+  const cheatUsers = new Set(cheats.map(c => c.user_email)).size;
+  const soalText   = totalSoal > 0 ? totalSoal : '-';
+
+  // Header
+  document.getElementById('hdr-title').textContent = `Monitor — ${room.room_name}`;
+  document.getElementById('hdr-sub').textContent = `${pkg?.name || 'Paket Ujian'} · Pengawas: ${room.pengawas_name || '-'}`;
+  const badge = document.getElementById('status-badge');
+  if (room.status === 'active') {
+    badge.innerHTML = `<span class="live-dot"></span>Live`;
+    badge.className = 'badge-status';
+  } else if (room.status === 'ended') {
+    badge.textContent = 'Selesai';
+    badge.className = 'badge-status ended';
+    clearInterval(_itv);
+  } else {
+    badge.textContent = 'Belum Mulai';
+    badge.className = 'badge-status draft';
+  }
+
+  // Tampilkan token box kalau aktif
+  const tokenBox = document.getElementById('token-box');
+  if (tokenBox) {
+    tokenBox.style.display = room.status === 'active' ? 'flex' : 'none';
+    const tv = document.getElementById('token-val');
+    if (tv && room.token) {
+      tv.dataset.token = room.token;
+      if (!tv.classList.contains('token-revealed')) tv.textContent = '••••••';
+    }
+  }
+
+  document.getElementById('main-content').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--muted)">Auto-refresh setiap 10 detik</div>
+      ${pkg?.id ? `<a href="/nilai-essay.html?session=${pkg.soal_source||''}" target="_blank"
+        style="font-size:12px;color:var(--teal);text-decoration:none;
+          padding:4px 10px;border:1px solid rgba(45,212,191,.25);border-radius:6px;
+          background:rgba(45,212,191,.06)">
+        📝 Nilai Essay Siswa →
+      </a>` : ''}
+    </div>
+
+    <div class="summary-cards">
+      <div class="sc">
+        <div class="sc-num" style="color:var(--blue)">${joined}<span style="font-size:16px;color:var(--muted)">/${room.max_siswa}</span></div>
+        <div class="sc-lbl">Sudah Join</div>
+      </div>
+      <div class="sc">
+        <div class="sc-num" style="color:var(--green)">${submitted}</div>
+        <div class="sc-lbl">Selesai</div>
+      </div>
+      <div class="sc">
+        <div class="sc-num" style="color:var(--amber)">${joined - submitted}</div>
+        <div class="sc-lbl">Sedang Ujian</div>
+      </div>
+      <div class="sc">
+        <div class="sc-num" style="color:var(--teal)">${soalText}</div>
+        <div class="sc-lbl">Total Soal</div>
+      </div>
+      <div class="sc">
+        <div class="sc-num" style="color:var(--red)">${cheatUsers}</div>
+        <div class="sc-lbl">Kena Cheat</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        👤 Daftar Siswa
+        <span style="font-size:11px;color:var(--muted);font-weight:400">${joined} dari ${room.max_siswa} tempat</span>
+      </div>
+      ${participants.length ? `
+      <table>
+        <thead><tr>
+          <th>#</th>
+          <th>Nama</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th style="text-align:center">Progress</th>
+          <th style="text-align:center">Cheat</th>
+          <th>IP / Risiko</th>
+        </tr></thead>
+        <tbody>
+          ${participants.map((p, i) => {
+            const isCheat = p.cheat_count >= 3;
+            const answered = Number(p.answered || 0);
+            const progressText = totalSoal > 0 ? `${answered} / ${totalSoal}` : `${answered}`;
+
+            return `<tr ${isCheat ? 'class="cheat-row"' : ''}>
+              <td style="font-family:var(--mono);color:var(--muted);font-size:11px">${i+1}</td>
+              <td style="font-weight:600">${esc(p.user_name || '-')}</td>
+              <td style="font-family:var(--mono);font-size:11px;color:var(--dim)">${esc(p.user_email)}</td>
+              <td>${statusPill(p.status)}</td>
+              <td style="text-align:center;font-family:var(--mono);font-size:12px">${progressText}</td>
+              <td style="text-align:center">${cheatPill(p.cheat_count)}</td>
+              <td style="font-size:11px;color:var(--muted)">${esc(p.ip_address||'')} ${riskPill(p.risk_level)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>` : '<div class="empty">Belum ada siswa yang join</div>'}
+    </div>
+
+    ${cheats.length ? `
+    <div class="card">
+      <div class="card-title" style="color:var(--amber)">
+        ⚠️ Log Pelanggaran
+        <span style="font-size:11px;color:var(--muted);font-weight:400">${cheats.length} kejadian dari ${cheatUsers} siswa</span>
+      </div>
+      <table>
+        <thead><tr><th>Waktu</th><th>Siswa</th><th>Jenis</th><th>Detail</th></tr></thead>
+        <tbody>
+          ${cheats.map(c => `
+          <tr>
+            <td style="font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap">${c.logged_at?.slice(0,19)||'-'}</td>
+            <td style="font-size:12px">${esc(c.user_name||c.user_email)}</td>
+            <td><span class="pill pill-amber">${esc(c.event_type)}</span></td>
+            <td style="font-size:11.5px;color:var(--dim)">${esc(c.detail||'')}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+  `;
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+let _tokenVisible = false;
+function toggleToken() {
+  _tokenVisible = !_tokenVisible;
+  const tv  = document.getElementById('token-val');
+  const btn = document.getElementById('btn-show-token');
+  if (!tv) return;
+  const tok = tv.dataset.token || '??';
+  if (_tokenVisible) {
+    tv.textContent = tok;
+    tv.classList.add('token-revealed');
+    if (btn) btn.textContent = '🙈 Sembunyikan';
+  } else {
+    tv.textContent = '••••••';
+    tv.classList.remove('token-revealed');
+    if (btn) btn.textContent = '👁 Tampilkan';
+  }
+}
+
+async function doRotateToken() {
+  if (!_data?.room?.id) return;
+  if (!confirm('Ganti token ruang ini? Siswa yang belum masuk harus pakai token baru.')) return;
+  try {
+    const r = await fetch(`/api/cbt-package/rooms/${_data.room.id}/rotate-token`, { method: 'POST' });
+    const j = await r.json();
+    if (!j.success) { alert('Gagal ganti token'); return; }
+    const tv = document.getElementById('token-val');
+    if (tv) {
+      tv.dataset.token = j.data.token;
+      if (_tokenVisible) tv.textContent = j.data.token;
+    }
+    safeLoad();
+    alert('Token berhasil diganti: ' + j.data.token);
+  } catch(e) { alert('Gagal: ' + e.message); }
+}
+
+// Auto-refresh setiap 10 detik — wrap try/catch supaya error tidak matikan interval
+async function safeLoad() {
+  try { await loadData(); } catch(e) { console.warn('[Monitor] refresh error:', e); }
+}
+safeLoad();
+_itv = setInterval(safeLoad, 10000);
+</script>
+</body>
+</html>

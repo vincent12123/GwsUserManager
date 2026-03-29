@@ -1,0 +1,129 @@
+  <!-- ── MULTI-RUANG CBT PAGE ── -->
+  <div class="page" id="page-cbtpkg">
+
+    <!-- List view -->
+    <div id="pkg-list-view">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:13px;color:var(--muted)">Kelola paket ujian multi-ruang — 1 set soal untuk banyak ruang terpisah</div>
+        <button class="btn btn-primary" onclick="showCreatePackage()">+ Paket Baru</button>
+      </div>
+      <div id="pkg-list"></div>
+    </div>
+
+    <!-- Detail paket -->
+    <div id="pkg-detail" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <button class="btn btn-ghost" onclick="closePackageDetail()">← Kembali</button>
+        <div style="flex:1">
+          <div id="pkg-detail-title" style="font-size:16px;font-weight:700"></div>
+          <div id="pkg-detail-sub" style="font-size:12px;color:var(--muted)"></div>
+        </div>
+        <span id="pkg-detail-status" style="font-size:12px;font-weight:600"></span>
+        <button id="btn-start-all" class="btn btn-primary" onclick="startAllRooms()" style="display:none">▶ Mulai Semua Ruang</button>
+        <button id="btn-end-all" class="btn btn-ghost" style="color:var(--red);display:none" onclick="endAllRooms()">⏹ Akhiri Semua</button>
+      </div>
+
+      <!-- Tab bar -->
+      <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
+        <button class="pkg-tab-btn act" data-tab="rooms" onclick="pkgTab('rooms')">🚪 Ruang</button>
+        <button class="pkg-tab-btn" data-tab="monitor" onclick="pkgTab('monitor')">📊 Monitor Live</button>
+      </div>
+
+      <!-- Tab: Ruang -->
+      <div class="pkg-panel" data-panel="rooms">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-ghost" onclick="showAddRoom()">+ Tambah Ruang</button>
+        </div>
+        <div id="rooms-list"></div>
+      </div>
+
+      <!-- Tab: Monitor -->
+      <div class="pkg-panel" data-panel="monitor" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-size:12px;color:var(--muted)" id="monitor-last"></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="loadMonitor()">⟳ Refresh</button>
+            <button class="btn btn-ghost" style="color:var(--teal)" onclick="openNilaiEssay()">📝 Nilai Essay</button>
+            <button class="btn btn-ghost" onclick="exportRekap(true)">📊 Export ke Sheets</button>
+          </div>
+        </div>
+        <div id="monitor-content"></div>
+      </div>
+    </div>
+
+    <!-- Modal: Buat Paket -->
+    <div class="modal-overlay" id="modal-create-package">
+      <div class="modal" style="max-width:520px;padding:0;overflow:hidden">
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(96,165,250,.06),transparent)">
+          <div style="font-size:15px;font-weight:700;margin-bottom:2px">📦 Buat Paket Ujian Baru</div>
+          <div style="font-size:12px;color:var(--muted)">1 paket = 1 set soal untuk banyak ruang</div>
+        </div>
+        <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="field-label">Pilih Sesi CBT (Sumber Soal) *</label>
+            <select id="pkg-soal-source" class="field-input" onchange="onPkgSessionChange(this)">
+              <option value="">⏳ Memuat sesi CBT...</option>
+            </select>
+            <div style="font-size:11px;color:var(--muted);margin-top:5px">
+              💡 Pilih sesi CBT → nama, mapel, kelas, dan durasi terisi otomatis
+            </div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px" id="pkg-auto-fields">
+            <div style="font-size:11px;color:var(--muted);text-align:center;padding:4px">Pilih sesi CBT di atas untuk mengisi detail otomatis</div>
+          </div>
+          <div>
+            <label class="field-label">Nama Paket (opsional — isi untuk override)</label>
+            <input id="pkg-name" class="field-input" placeholder="Kosongkan untuk pakai nama sesi CBT">
+          </div>
+        </div>
+        <div style="padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="closeModal('modal-create-package')">Batal</button>
+          <button class="btn btn-primary" onclick="submitCreatePackage()">📦 Buat Paket</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Tambah Ruang -->
+    <div class="modal-overlay" id="modal-add-room">
+      <div class="modal" style="max-width:460px;padding:0;overflow:hidden">
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(45,212,191,.05),transparent)">
+          <div style="font-size:15px;font-weight:700;margin-bottom:2px">🚪 Tambah Ruang Ujian</div>
+          <div style="font-size:12px;color:var(--muted)">Setiap ruang mendapat token dan pengawas sendiri</div>
+        </div>
+        <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="field-label">Nama Ruang *</label>
+            <input id="room-name" class="field-input" placeholder="Ruang 1 / Lab Komputer A / Ruang TKJ">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <label class="field-label">Nama Pengawas</label>
+              <input id="room-pengawas-name" class="field-input" placeholder="Pak Budi">
+            </div>
+            <div>
+              <label class="field-label">Email Pengawas</label>
+              <input id="room-pengawas-email" class="field-input" type="email" placeholder="budi@<%= school.SCHOOL_DOMAIN %>">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <label class="field-label">Kapasitas Siswa</label>
+              <input id="room-max" class="field-input" type="number" value="32">
+            </div>
+            <div>
+              <label class="field-label">Rotate Token (menit, 0=off)</label>
+              <input id="room-token-interval" class="field-input" type="number" value="0">
+            </div>
+          </div>
+          <div style="background:rgba(45,212,191,.06);border:1px solid rgba(45,212,191,.15);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--muted)">
+            💡 Token siswa dan token pengawas akan di-generate otomatis saat ruang dimulai
+          </div>
+        </div>
+        <div style="padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="closeModal('modal-add-room')">Batal</button>
+          <button class="btn btn-primary" onclick="submitAddRoom()">🚪 Tambah Ruang</button>
+        </div>
+      </div>
+    </div>
+
+  </div>

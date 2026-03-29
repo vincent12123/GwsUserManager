@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>Reset Password</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060D1F;--surface:#0D1B38;--surface2:#162040;
+  --blue:#2563EB;--blue2:#3B82F6;--cyan:#06B6D4;
+  --green:#10B981;--red:#EF4444;--amber:#F59E0B;
+  --text:#E2E8F0;--muted:#64748B;--dim:#94A3B8;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --sans:'Plus Jakarta Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:20px;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 50% 0%,rgba(37,99,235,.12),transparent),
+    radial-gradient(ellipse 50% 40% at 80% 80%,rgba(6,182,212,.06),transparent)}
+
+.card{width:100%;max-width:420px;background:var(--surface);
+  border:1px solid var(--border2);border-radius:20px;overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.04)}
+
+/* Header */
+.card-head{padding:28px 28px 22px;text-align:center;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(37,99,235,.08),transparent)}
+.school-logo{width:56px;height:56px;border-radius:14px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin:0 auto 14px;
+  box-shadow:0 8px 24px rgba(37,99,235,.35)}
+.card-head h1{font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.card-head p{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+/* Steps indicator */
+.steps{display:flex;align-items:center;gap:0;padding:16px 28px;
+  border-bottom:1px solid var(--border)}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;
+  transition:all .3s}
+.step-dot.done{background:var(--green);color:#fff}
+.step-dot.active{background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.2)}
+.step-dot.idle{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.step-line{flex:1;height:2px;background:var(--border);transition:background .3s}
+.step-line.done{background:var(--green)}
+
+/* Body */
+.card-body{padding:24px 28px;min-height:240px}
+.step-panel{display:none}
+.step-panel.active{display:block}
+
+.step-title{font-size:15px;font-weight:700;margin-bottom:4px}
+.step-sub{font-size:12.5px;color:var(--dim);margin-bottom:20px;line-height:1.5}
+
+.field-label{font-size:10.5px;font-weight:700;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:7px}
+.field-input{width:100%;padding:13px 16px;background:rgba(255,255,255,.05);
+  border:1.5px solid var(--border2);border-radius:12px;color:var(--text);
+  font-family:var(--sans);font-size:15px;transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none}
+.field-input:focus{outline:none;border-color:var(--blue);
+  box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.field-input::placeholder{color:var(--muted);font-size:13px}
+.field-input.err{border-color:var(--red)}
+.field-wrap{margin-bottom:16px;position:relative}
+.field-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;
+  padding:4px;margin-top:12px}
+
+/* Password rules */
+.pw-rules{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.pw-rule{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);
+  transition:color .2s}
+.pw-rule.ok{color:var(--green)}
+.pw-rule.fail{color:var(--red)}
+.pw-rule-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* Buttons */
+.btn-main{width:100%;padding:14px;background:linear-gradient(135deg,var(--blue),#1D4ED8);
+  color:#fff;border:none;border-radius:12px;font-family:var(--sans);
+  font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 16px rgba(37,99,235,.35);transition:opacity .15s,transform .1s;
+  margin-top:8px}
+.btn-main:hover{opacity:.92}
+.btn-main:active{transform:scale(.98)}
+.btn-main:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-back{background:none;border:none;color:var(--muted);font-family:var(--sans);
+  font-size:13px;cursor:pointer;padding:8px 0;margin-bottom:4px}
+.btn-back:hover{color:var(--text)}
+
+/* Error / success */
+.alert{padding:12px 14px;border-radius:10px;font-size:13px;
+  margin-bottom:14px;line-height:1.5;display:none}
+.alert.show{display:block}
+.alert-err{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#F87171}
+.alert-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber)}
+
+/* Success screen */
+.success-wrap{text-align:center;padding:16px 0}
+.success-icon{width:72px;height:72px;border-radius:50%;
+  background:rgba(16,185,129,.12);border:2px solid rgba(16,185,129,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;margin:0 auto 20px;
+  animation:popIn .4s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-title{font-size:20px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.success-sub{font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:24px}
+.success-steps{text-align:left;background:var(--surface2);border-radius:10px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.success-step{display:flex;gap:10px;font-size:12.5px;color:var(--dim)}
+.success-step strong{color:var(--text)}
+.btn-reset-again{width:100%;padding:11px;background:rgba(255,255,255,.06);
+  border:1.5px solid var(--border2);border-radius:10px;color:var(--dim);
+  font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer}
+.btn-reset-again:hover{background:rgba(255,255,255,.1);color:var(--text)}
+
+/* Footer */
+.card-foot{padding:14px 28px;border-top:1px solid var(--border);
+  text-align:center;font-size:11px;color:var(--muted)}
+
+/* Loading spinner */
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);
+  border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;
+  display:inline-block;vertical-align:middle;margin-right:7px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <!-- Header -->
+  <div class="card-head">
+    <div class="school-logo">🏫</div>
+    <h1>Reset Password</h1>
+    <p id="school-name-sub">Masukkan email sekolah Anda untuk melanjutkan</p>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps" id="steps-bar">
+    <div class="step-dot active" id="dot-1">1</div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step-dot idle" id="dot-2">2</div>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body">
+
+    <!-- Step 1: Email -->
+    <div class="step-panel active" id="panel-1">
+      <div class="step-title">Identifikasi Akun</div>
+      <div class="step-sub">Masukkan alamat email sekolah Anda.</div>
+      <div class="alert alert-err" id="err-1"></div>
+      <div class="field-wrap">
+        <label class="field-label">Email Sekolah</label>
+        <input id="inp-email" class="field-input" type="email"
+          placeholder="nama@sekolah.sch.id" id="email-placeholder-inp"
+          autocomplete="email" inputmode="email">
+      </div>
+      <button class="btn-main" id="btn-next" onclick="doVerify()">Lanjut →</button>
+    </div>
+
+    <!-- Step 2: Password baru -->
+    <div class="step-panel" id="panel-2">
+      <button class="btn-back" onclick="goStep(1)">← Ganti Email</button>
+      <div class="step-title">Buat Password Baru</div>
+      <div class="step-sub" id="greeting">Masukkan password baru untuk akun Anda.</div>
+      <div class="alert alert-err" id="err-2"></div>
+      <div class="field-wrap">
+        <label class="field-label">Password Baru</label>
+        <input id="inp-pass" class="field-input" type="password"
+          placeholder="Min. 6 karakter" autocomplete="new-password"
+          oninput="checkPwRules()">
+        <button class="field-toggle" type="button" onclick="togglePw('inp-pass',this)">👁</button>
+      </div>
+      <div class="pw-rules">
+        <div class="pw-rule" id="rule-len"><div class="pw-rule-dot"></div>Minimal 6 karakter</div>
+        <div class="pw-rule" id="rule-letter"><div class="pw-rule-dot"></div>Mengandung huruf (a-z)</div>
+        <div class="pw-rule" id="rule-number"><div class="pw-rule-dot"></div>Mengandung angka (0-9)</div>
+      </div>
+      <div class="field-wrap" style="margin-top:14px">
+        <label class="field-label">Konfirmasi Password</label>
+        <input id="inp-confirm" class="field-input" type="password"
+          placeholder="Ulangi password baru" autocomplete="new-password">
+        <button class="field-toggle" type="button" onclick="togglePw('inp-confirm',this)">👁</button>
+      </div>
+      <button class="btn-main" id="btn-reset" onclick="doReset()">🔑 Reset Password</button>
+    </div>
+
+    <!-- Step 3: Sukses -->
+    <div class="step-panel" id="panel-success">
+      <div class="success-wrap">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Password Berhasil Direset!</div>
+        <div class="success-sub">Password akun Google Anda telah berhasil diperbarui.</div>
+        <div class="success-steps">
+          <div class="success-step">
+            <span>1.</span>
+            <div>Buka <strong>mail.google.com</strong> atau aplikasi <strong>Gmail</strong> di HP Anda</div>
+          </div>
+          <div class="success-step">
+            <span>2.</span>
+            <div>Login dengan email <strong id="success-email"></strong></div>
+          </div>
+          <div class="success-step">
+            <span>3.</span>
+            <div>Gunakan password baru yang baru saja Anda buat</div>
+          </div>
+        </div>
+        <button class="btn-reset-again" onclick="resetForm()">↺ Reset Akun Lain</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="card-foot">
+    Layanan tersedia 05.00 – 22.00 · <span id="footer-domain">@sekolah.sch.id</span>
+  </div>
+</div>
+
+<script>
+let _email = '';
+
+// ── Step navigation ───────────────────────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${n}`)?.classList.add('active');
+
+  // Update dots
+  [1, 2].forEach(i => {
+    const dot  = document.getElementById(`dot-${i}`);
+    const line = document.getElementById(`line-${i}`);
+    if (i < n)  { dot.className = 'step-dot done'; dot.textContent = '✓'; }
+    if (i === n){ dot.className = 'step-dot active'; dot.textContent = i; }
+    if (i > n)  { dot.className = 'step-dot idle'; dot.textContent = i; }
+    if (line) line.className = 'step-line' + (i < n ? ' done' : '');
+  });
+
+  // Clear errors
+  document.getElementById(`err-${n}`)?.classList.remove('show');
+}
+
+function showSuccess() {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-success').classList.add('active');
+  document.getElementById('steps-bar').style.display = 'none';
+  document.getElementById('success-email').textContent = _email;
+}
+
+function resetForm() {
+  _email = '';
+  document.getElementById('inp-email').value   = '';
+  document.getElementById('inp-pass').value    = '';
+  document.getElementById('inp-confirm').value = '';
+  document.getElementById('steps-bar').style.display = 'flex';
+  resetPwRules();
+  goStep(1);
+}
+
+// ── Step 1: Verify ────────────────────────────────────────────────────────────
+async function doVerify() {
+  const email = document.getElementById('inp-email').value.trim();
+  const errEl = document.getElementById('err-1');
+  const btn   = document.getElementById('btn-next');
+  errEl.classList.remove('show');
+
+  if (!email) { showErr('err-1', 'Email wajib diisi'); return; }
+  if (!email.includes('@')) { showErr('err-1', 'Format email tidak valid'); return; }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Memverifikasi...';
+
+  try {
+    const r = await fetch('/api/sspr/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    const j = await r.json();
+
+    if (!j.success) {
+      showErr('err-1', j.error || 'Verifikasi gagal');
+      return;
+    }
+
+    _email = email;
+    const name = j.name ? j.name.split(' ')[0] : '';
+    document.getElementById('greeting').textContent =
+      name ? `Halo ${name}! Buat password baru untuk akun Anda.` : 'Buat password baru untuk akun Anda.';
+    goStep(2);
+    setTimeout(() => document.getElementById('inp-pass').focus(), 100);
+
+  } catch(e) {
+    showErr('err-1', 'Tidak dapat terhubung ke server. Coba lagi.');
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = 'Lanjut →';
+  }
+}
+
+// ── Step 2: Reset ─────────────────────────────────────────────────────────────
+async function doReset() {
+  const pass    = document.getElementById('inp-pass').value;
+  const confirm = document.getElementById('inp-confirm').value;
+  const btn     = document.getElementById('btn-reset');
+
+  if (!checkPwRules()) { showErr('err-2', 'Password tidak memenuhi syarat'); return; }
+  if (pass !== confirm) { showErr('err-2', 'Konfirmasi password tidak cocok'); return; }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Mereset Password...';
+
+  try {
+    const r = await fetch('/api/sspr/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: _email, password: pass }),
+    });
+    const j = await r.json();
+
+    if (!j.success) {
+      showErr('err-2', j.error || 'Reset gagal, coba lagi');
+      return;
+    }
+
+    showSuccess();
+  } catch(e) {
+    showErr('err-2', 'Tidak dapat terhubung ke server. Coba lagi.');
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = '🔑 Reset Password';
+  }
+}
+
+// ── Password rules ────────────────────────────────────────────────────────────
+function checkPwRules() {
+  const pw   = document.getElementById('inp-pass').value;
+  const rLen = document.getElementById('rule-len');
+  const rLet = document.getElementById('rule-letter');
+  const rNum = document.getElementById('rule-number');
+
+  const okLen = pw.length >= 6;
+  const okLet = /[a-zA-Z]/.test(pw);
+  const okNum = /[0-9]/.test(pw);
+
+  setRule(rLen, okLen);
+  setRule(rLet, okLet);
+  setRule(rNum, okNum);
+
+  return okLen && okLet && okNum;
+}
+
+function setRule(el, ok) {
+  el.className = 'pw-rule ' + (ok ? 'ok' : (el.classList.contains('ok') ? 'fail' : ''));
+}
+
+function resetPwRules() {
+  ['rule-len','rule-letter','rule-number'].forEach(id => {
+    document.getElementById(id).className = 'pw-rule';
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const p1 = document.getElementById('panel-1');
+  const p2 = document.getElementById('panel-2');
+  if (p1.classList.contains('active')) doVerify();
+  if (p2.classList.contains('active')) doReset();
+});
+
+// Load school info dari server
+(async function(){
+  try {
+    const r = await fetch('/api/health');
+    const j = await r.json();
+    if (j.school)  document.title = `Reset Password — ${j.school}`;
+    if (j.school)  {
+      const sub = document.getElementById('school-name-sub');
+      if (sub) sub.innerHTML = `${j.school}<br>Masukkan email sekolah Anda untuk melanjutkan`;
+    }
+    if (j.domain) {
+      const inp = document.getElementById('email-placeholder-inp');
+      if (inp) inp.placeholder = `nama@${j.domain}`;
+      const fd = document.getElementById('footer-domain');
+      if (fd) fd.textContent = `@${j.domain}`;
+    }
+  } catch(_) {}
+})();
+</script>
+</body>
+</html>

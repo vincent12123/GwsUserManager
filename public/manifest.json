@@ -1,0 +1,26 @@
+{
+  "name": "CBT Siswa",
+  "short_name": "CBT Siswa",
+  "description": "Aplikasi Ujian Berbasis Komputer",
+  "start_url": "/cbt-siswa.html",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "portrait-primary",
+  "background_color": "#0c0f18",
+  "theme_color": "#60a5fa",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

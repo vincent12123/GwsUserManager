@@ -1,0 +1,165 @@
+  <!-- ── MCP GENERATOR PAGE ── -->
+  <div class="page" id="page-mcp">
+
+    <!-- Step indicator -->
+    <div style="display:flex;align-items:center;gap:0;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px">
+      <div id="mcp-dot-setup"    class="mcp-step-dot active"></div>
+      <div style="flex:1;height:2px;background:var(--border)"></div>
+      <div id="mcp-dot-generate" class="mcp-step-dot idle"></div>
+      <div style="flex:1;height:2px;background:var(--border)"></div>
+      <div id="mcp-dot-review"   class="mcp-step-dot idle"></div>
+      <div style="flex:1;height:2px;background:var(--border)"></div>
+      <div id="mcp-dot-done"     class="mcp-step-dot idle"></div>
+    </div>
+
+    <!-- ── STEP SETUP ── -->
+    <div id="mcp-step-setup">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+        <!-- Konfigurasi -->
+        <div class="card">
+          <div class="card-head" style="padding:14px 16px 10px">
+            <div class="card-title" style="font-size:14px">⚙️ Konfigurasi Soal</div>
+          </div>
+          <div style="padding:0 16px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label class="field-label">Mata Pelajaran *</label><input id="mcp-mapel" class="field-input" placeholder="contoh: Web Programming"></div>
+            <div><label class="field-label">Kelas *</label><input id="mcp-kelas" class="field-input" placeholder="contoh: XI RPL 1"></div>
+            <div><label class="field-label">Jumlah Soal PG</label><input id="mcp-num-pg" class="field-input" type="number" value="5" min="0" max="50"></div>
+            <div><label class="field-label">Jumlah Soal Essay</label><input id="mcp-num-es" class="field-input" type="number" value="3" min="0" max="20"></div>
+            <div><label class="field-label">Tingkat Kesulitan</label>
+              <select id="mcp-level" class="field-input">
+                <option value="mudah">Mudah (C1-C2)</option>
+                <option value="sedang" selected>Sedang (C2-C3)</option>
+                <option value="sulit">Sulit (C3-C4)</option>
+                <option value="campuran">Campuran</option>
+              </select></div>
+            <div><label class="field-label">Status Ollama</label>
+              <div id="mcp-ollama-status" style="padding:7px 0;font-size:12px">Belum dicek</div></div>
+            <div><label class="field-label">Nama Sekolah</label><input id="mcp-nama-sekolah" class="field-input" value="<%= school.SCHOOL_FULL_NAME %>"></div>
+            <div><label class="field-label">Semester</label>
+              <select id="mcp-semester" class="field-input"><option>Ganjil</option><option>Genap</option></select></div>
+            <div><label class="field-label">Tahun Ajaran</label><input id="mcp-tahun" class="field-input" value="2025/2026"></div>
+            <div><label class="field-label">Waktu</label><input id="mcp-waktu" class="field-input" value="90 menit"></div>
+            <div style="grid-column:1/-1"><label class="field-label">Pembuat Soal</label><input id="mcp-pembuat" class="field-input" value="Sukardi, S.Kom"></div>
+          </div>
+        </div>
+
+        <!-- Teks materi -->
+        <div class="card" style="display:flex;flex-direction:column">
+          <div class="card-head" style="padding:14px 16px 10px">
+            <div class="card-title" style="font-size:14px">📄 Materi / Teks Sumber</div>
+            <div style="display:flex;gap:6px;margin-left:auto">
+              <input type="file" id="mcp-pdf-input" accept=".pdf" style="display:none">
+              <button id="mcp-btn-pdf" class="btn btn-ghost" onclick="mcpUploadPDF()">📄 Upload PDF</button>
+              <button class="btn btn-ghost" onclick="checkOllamaStatus()">🔄 Cek Ollama</button>
+            </div>
+          </div>
+          <div style="padding:0 16px;flex:1;display:flex;flex-direction:column;gap:6px">
+            <textarea id="mcp-teks-materi" oninput="mcpSetupCharCount()" rows="14"
+              placeholder="Paste teks materi di sini, atau upload PDF materi di atas..."
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:10px;font-size:12px;resize:none;line-height:1.6"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:16px">
+              <span id="mcp-char-count" style="font-size:11px;color:var(--muted)">0 karakter</span>
+              <button id="mcp-btn-generate" class="btn btn-primary" disabled onclick="mcpStartGenerate()">🤖 Generate Soal →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daftar paket tersimpan -->
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:14px">📦 Paket Soal Tersimpan</div>
+            <div style="font-size:12px;color:var(--muted)">Klik paket untuk lanjut review</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadMCPPackages()">⟳ Refresh</button>
+        </div>
+        <div id="mcp-packages-list" style="padding:0 16px 16px"></div>
+      </div>
+    </div>
+
+    <!-- ── STEP GENERATE ── -->
+    <div id="mcp-step-generate" style="display:none">
+      <div class="card" style="padding:40px;text-align:center">
+        <div style="font-size:18px;font-weight:700;margin-bottom:16px">🤖 Ollama Sedang Bekerja</div>
+        <div id="mcp-gen-status" style="font-size:13px;color:var(--muted)"></div>
+      </div>
+    </div>
+
+    <!-- ── STEP REVIEW ── -->
+    <div id="mcp-step-review" style="display:none">
+      <div style="display:grid;grid-template-columns:220px 1fr;gap:16px">
+
+        <!-- Sidebar -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="card" style="padding:12px">
+            <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Paket Aktif</div>
+            <div id="mcp-review-info" style="font-size:12px;color:var(--text);margin-bottom:10px">—</div>
+            <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Daftar Soal</div>
+            <div id="mcp-sidebar" style="display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto"></div>
+          </div>
+          <div class="card" style="padding:12px">
+            <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden;margin-bottom:6px">
+              <div id="mcp-prog-fill" style="height:100%;background:var(--green);border-radius:4px;transition:width .3s;width:0%"></div>
+            </div>
+            <div id="mcp-prog-label" style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px">0 / 0 disetujui</div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px" onclick="mcpBulkStatus('approved')">✅ Setujui Semua</button>
+              <button class="btn btn-ghost" style="font-size:11px;padding:5px;color:var(--red)" onclick="mcpBulkStatus('rejected')">❌ Tolak Semua</button>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+            <button id="mcp-btn-export" class="btn btn-primary" disabled onclick="mcpDoExport()"
+              style="width:100%;font-size:12px;margin-bottom:8px">↓ Export .docx + Arsip</button>
+            <!-- Import dari review panel -->
+            <select id="mcp-target-session-review" class="field-input" style="width:100%;margin-bottom:6px;font-size:11px">
+              <option value="">-- Pilih Sesi CBT --</option>
+            </select>
+            <button id="mcp-btn-import-review" class="btn btn-ghost" disabled onclick="mcpImportToCBT('review')"
+              style="width:100%;font-size:11px">🚀 Import ke CBT</button>
+            <button class="btn btn-ghost" style="width:100%;font-size:11px;margin-top:4px;color:var(--teal);border-color:rgba(45,212,191,.25)" onclick="mcpSimpanKeBank()">📚 Simpan ke Bank Soal</button>
+            <button class="btn btn-ghost" style="width:100%;font-size:10px;margin-top:4px;color:var(--muted)" onclick="loadCBTSessionsForMCP()">🔄 Refresh sesi</button>
+          </div>
+          <button class="btn btn-ghost" style="font-size:11px" onclick="mcpGoStep('setup')">← Kembali ke Setup</button>
+        </div>
+
+        <!-- Editor -->
+        <div class="card" style="padding:16px">
+          <div id="mcp-editor" style="color:var(--muted);text-align:center;padding:40px">
+            Pilih soal di sebelah kiri untuk diedit
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP DONE ── -->
+    <div id="mcp-step-done" style="display:none">
+      <div class="card" style="padding:24px;max-width:640px;margin:0 auto">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:36px;margin-bottom:8px">✅</div>
+          <div style="font-size:18px;font-weight:700">Soal Berhasil Diexport!</div>
+          <div id="mcp-done-sub" style="font-size:13px;color:var(--muted);margin-top:4px"></div>
+        </div>
+        <div id="mcp-done-files" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+        <!-- Import dari done panel -->
+        <div style="border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--surface2)">
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px">🚀 Import Langsung ke Sesi CBT</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Soal yang disetujui akan diimport langsung ke sesi ujian yang dipilih.</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="mcp-target-session-done" class="field-input" style="flex:1">
+              <option value="">-- Pilih Sesi CBT --</option>
+            </select>
+            <button class="btn btn-ghost" onclick="loadCBTSessionsForMCP()" title="Refresh">🔄</button>
+            <button id="mcp-btn-import-done" class="btn btn-primary" onclick="mcpImportToCBT('done')">🚀 Import ke CBT</button>
+          </div>
+          <div style="margin-top:8px">
+            <button class="btn btn-ghost" style="width:100%;color:var(--teal);border-color:rgba(45,212,191,.25)" onclick="mcpSimpanKeBank()">📚 Simpan ke Bank Soal</button>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:16px">
+          <button class="btn btn-ghost" onclick="mcpReset()">🔄 Buat Soal Lagi</button>
+        </div>
+      </div>
+    </div>
+
+  </div>

@@ -1,0 +1,28 @@
+<%- include('layout/head') %>
+<%- include('layout/sidebar') %>
+
+<div class="main">
+  <header class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-sub">Ringkasan Google Workspace</div>
+    </div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </header>
+
+  <%- include('pages/dashboard') %>
+  <%- include('pages/users') %>
+  <%- include('pages/bulk') %>
+  <%- include('pages/audit') %>
+  <%- include('pages/security') %>
+  <%- include('pages/cbt') %>
+  <%- include('pages/mcp') %>
+  <%- include('pages/driveaudit') %>
+  <%- include('pages/cbtpkg') %>
+  <%- include('pages/adminusers') %>
+  <%- include('pages/bank') %>
+  <%- include('pages/sspr') %>
+  <%- include('pages/classroom') %>
+</div>
+<%- include('partials/modals') %>
+<%- include('layout/scripts') %>

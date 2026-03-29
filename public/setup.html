@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Setup — GWS Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0f18;--surface:#131722;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --text:#e8eaf2;--muted:#5c6480;--dim:#8892b0;--green:#34d399;--red:#f87171;--blue:#60a5fa;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--surface);border:1px solid var(--border2);border-radius:20px;
+  width:100%;max-width:440px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.card-head{padding:26px 28px 22px;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(52,211,153,.06),transparent)}
+.setup-icon{font-size:32px;margin-bottom:12px}
+h1{font-size:17px;font-weight:700;margin-bottom:4px}
+.sub{font-size:12px;color:var(--muted);line-height:1.6}
+.card-body{padding:24px 28px 28px;display:flex;flex-direction:column;gap:14px}
+.field-label{font-size:10.5px;font-weight:700;color:var(--dim);text-transform:uppercase;
+  letter-spacing:.7px;display:block;margin-bottom:6px}
+.field-input{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);
+  border:1.5px solid var(--border2);border-radius:10px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;transition:border-color .2s}
+.field-input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.1)}
+.field-input::placeholder{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-setup{width:100%;padding:13px;background:linear-gradient(135deg,var(--green),#10b981);
+  color:#0a1a12;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;
+  font-size:14.5px;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 16px rgba(52,211,153,.3);transition:opacity .15s}
+.btn-setup:hover{opacity:.9}
+.btn-setup:disabled{opacity:.4;cursor:not-allowed}
+.err{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);
+  border-radius:8px;padding:10px 14px;color:var(--red);font-size:12.5px;display:none}
+.info-box{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);
+  border-radius:8px;padding:10px 14px;font-size:12px;color:var(--dim);line-height:1.6}
+.spin{width:16px;height:16px;border:2px solid rgba(0,0,0,.2);border-top-color:#0a1a12;
+  border-radius:50%;animation:sp .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-head">
+    <div class="setup-icon">🔧</div>
+    <h1>Setup Awal GWS Manager</h1>
+    <div class="sub">Buat akun Super Admin pertama.<br>Setelah ini, halaman setup akan dinonaktifkan.</div>
+  </div>
+  <div class="card-body">
+    <div class="info-box">
+      ℹ️ Akun ini akan memiliki akses penuh ke semua fitur GWS Manager termasuk Security Center dan Drive Audit.
+    </div>
+    <div id="err-msg" class="err"></div>
+    <div>
+      <label class="field-label">Nama Lengkap</label>
+      <input id="inp-name" class="field-input" placeholder="Sukardi, S.Kom">
+    </div>
+    <div>
+      <label class="field-label">Email Sekolah</label>
+      <input id="inp-email" class="field-input" type="email" placeholder="sukardi@karyabangsa.sch.id">
+    </div>
+    <div class="grid2">
+      <div>
+        <label class="field-label">Password</label>
+        <input id="inp-pass" class="field-input" type="password" placeholder="Min. 6 karakter">
+      </div>
+      <div>
+        <label class="field-label">Konfirmasi</label>
+        <input id="inp-confirm" class="field-input" type="password" placeholder="Ulangi password">
+      </div>
+    </div>
+    <button class="btn-setup" id="btn-setup" onclick="doSetup()">🔧 Buat Akun Super Admin</button>
+  </div>
+</div>
+
+<script>
+async function doSetup() {
+  const name    = document.getElementById('inp-name').value.trim();
+  const email   = document.getElementById('inp-email').value.trim();
+  const pass    = document.getElementById('inp-pass').value;
+  const confirm = document.getElementById('inp-confirm').value;
+  const btn     = document.getElementById('btn-setup');
+  document.getElementById('err-msg').style.display = 'none';
+
+  if (!name || !email || !pass) { showErr('Semua field wajib diisi'); return; }
+  if (pass !== confirm)          { showErr('Password tidak cocok'); return; }
+  if (pass.length < 6)           { showErr('Password minimal 6 karakter'); return; }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spin"></span>Membuat akun...';
+
+  try {
+    const r = await fetch('/api/auth/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, password: pass, confirm }),
+    });
+    const j = await r.json();
+    if (!j.success) { showErr(j.error); return; }
+
+    btn.innerHTML = '✅ Akun dibuat! Mengalihkan ke login...';
+    setTimeout(() => { window.location = '/login.html'; }, 1500);
+  } catch(e) {
+    showErr('Gagal: ' + e.message);
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err-msg');
+  el.textContent   = msg;
+  el.style.display = 'block';
+  const btn = document.getElementById('btn-setup');
+  btn.disabled  = false;
+  btn.innerHTML = '🔧 Buat Akun Super Admin';
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doSetup(); });
+</script>
+</body>
+</html>

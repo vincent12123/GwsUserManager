@@ -1,0 +1,177 @@
+<!-- ── CLASSROOM PAGE ── -->
+  <div class="page" id="page-classroom">
+    <div class="classroom-layout">
+
+      <!-- Form Panel -->
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">✏️ Buat Kelas Baru</div><div class="card-sub-t">Isi detail dan tambah anggota</div></div>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div>
+              <label class="field-label">Nama Kelas <span class="req">*</span></label>
+              <input type="text" id="cls-name" class="field-input" placeholder="Contoh: Web Programming XII RPL 1">
+            </div>
+            <div>
+              <label class="field-label">Bagian / Tahun Ajaran</label>
+              <input type="text" id="cls-section" class="field-input" placeholder="2025/2026 Genap">
+            </div>
+            <div>
+              <label class="field-label">Guru Pengajar <span class="req">*</span></label>
+              <div class="ac-wrap">
+                <input type="text" id="cls-teacher-search" class="field-input" placeholder="Ketik nama guru..." oninput="acSearch(this,'cls-teacher-suggest')">
+                <div id="cls-teacher-suggest" class="ac-box"></div>
+                <input type="hidden" id="cls-teacher-email">
+              </div>
+              <div class="selected-indicator" id="cls-teacher-selected">
+                <span>👤</span><span id="cls-teacher-text"></span>
+                <button onclick="clearTeacher()">×</button>
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Tambah Siswa</label>
+              <div class="ac-wrap">
+                <input type="text" id="cls-student-search" class="field-input" placeholder="Ketik nama siswa..." oninput="acSearch(this,'cls-student-suggest')">
+                <div id="cls-student-suggest" class="ac-box"></div>
+              </div>
+              <div class="tags-wrap" id="cls-students-tags"></div>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-primary btn-full" id="cls-submit-btn" onclick="submitCourse()">
+              🚀 Buat Kelas
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Panel -->
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="cls-search" placeholder="Cari kelas atau guru..." oninput="filterCourses()">
+          </div>
+          <button class="btn btn-ghost" onclick="loadCourses()">⟳ Refresh</button>
+          <button class="btn btn-ghost" onclick="openBroadcast()" style="color:#7C3AED;border-color:#7C3AED">📡 Broadcast</button>
+          <button class="btn btn-ghost" id="btn-topics" onclick="openTopics()" style="display:none">🏷️ Topik</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nama Kelas</th>
+                <th>Guru</th>
+                <th>Status</th>
+                <th style="text-align:center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="cls-tbody">
+              <tr><td colspan="4" class="state-box">
+                <div class="state-emoji">🔄</div>
+                <div class="state-title">Klik Refresh untuk memuat data</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Students Panel -->
+    <div class="students-panel" id="students-panel" style="display:none">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">👩‍🎓 Daftar Siswa — <span id="students-course-name">-</span></div>
+            <div class="card-sub-t" id="students-count">-</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="openImportFromOU(currentCourseId, document.getElementById('students-course-name').textContent)" style="color:var(--accent);border-color:var(--accent)">📥 Import dari OU</button>
+            <button class="btn btn-primary" onclick="toggleAddStudent()">+ Tambah Siswa</button>
+            <button class="btn btn-ghost" onclick="closeStudents()">✕ Tutup</button>
+          </div>
+        </div>
+
+        <!-- Form tambah siswa — tersembunyi by default -->
+        <div id="add-student-form" style="display:none;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--surface2)">
+          <label class="field-label" style="margin-bottom:8px;display:block">Cari & Tambah Siswa</label>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div class="ac-wrap" style="flex:1">
+              <input type="text" id="add-student-search" class="field-input"
+                placeholder="Ketik nama siswa..."
+                oninput="acSearch(this,'add-student-suggest')">
+              <div id="add-student-suggest" class="ac-box"></div>
+            </div>
+            <button class="btn btn-ghost" onclick="toggleAddStudent()">Tutup</button>
+          </div>
+          <!-- Tags siswa yang dipilih -->
+          <div class="tags-wrap" id="add-student-tags" style="margin-top:10px"></div>
+          <div id="add-student-actions" style="display:none;margin-top:12px">
+            <button class="btn btn-primary" id="add-student-submit-btn" onclick="submitAddStudents()">
+              ➕ Tambahkan ke Kelas
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nama</th><th>Email</th><th style="text-align:center">Aksi</th></tr></thead>
+            <tbody id="students-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcements Panel -->
+    <div class="students-panel" id="announcements-panel" style="display:none">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">📢 Pengumuman — <span id="ann-course-name">-</span></div>
+            <div class="card-sub-t" id="ann-count">-</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="openNewAnnouncement()">+ Buat Pengumuman</button>
+            <button class="btn btn-ghost" onclick="closeAnnouncements()">✕ Tutup</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Teks Pengumuman</th><th>Status</th><th>Waktu</th><th style="text-align:center">Aksi</th></tr></thead>
+            <tbody id="ann-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CourseWork Panel -->
+    <div class="students-panel" id="coursework-panel" style="display:none">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">📝 Tugas — <span id="cw-course-name">-</span></div>
+            <div class="card-sub-t" id="cw-count">-</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="openImportSoal()" style="color:var(--green);border-color:var(--green)">📋 Import Soal</button>
+            <button class="btn btn-primary" onclick="openNewCoursework()">+ Buat Tugas</button>
+            <button class="btn btn-ghost" onclick="closeCoursework()">✕ Tutup</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Judul Tugas</th>
+              <th>Tipe</th>
+              <th>Deadline</th>
+              <th>Nilai Maks</th>
+              <th style="text-align:center">Aksi</th>
+            </tr></thead>
+            <tbody id="cw-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>

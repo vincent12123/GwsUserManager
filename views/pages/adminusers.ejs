@@ -1,0 +1,89 @@
+ <!-- ── ADMIN USERS PAGE ── -->
+  <div class="page" id="page-adminusers">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--muted)">Kelola akun yang bisa login ke GWS Manager</div>
+      <button class="btn btn-primary" onclick="showAddAdminUser()">+ Tambah Akun</button>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="card-title">Daftar Akun GWS Manager</div>
+        <button class="btn btn-ghost" onclick="loadAdminUsers()">⟳ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Nama</th><th>Email</th><th>Role</th>
+            <th style="text-align:center">Status</th>
+            <th>Terakhir Login</th>
+            <th style="text-align:center">Aksi</th>
+          </tr></thead>
+          <tbody id="admin-users-tbody">
+            <tr><td colspan="6" class="state-box">
+              <div class="state-emoji">👥</div>
+              <div class="state-title">Memuat...</div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal: Tambah/Edit User -->
+    <div class="modal-overlay" id="modal-admin-user">
+      <div class="modal" style="max-width:440px;padding:0;overflow:hidden">
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border);
+          background:linear-gradient(135deg,rgba(96,165,250,.06),transparent)">
+          <div class="modal-title" id="modal-admin-user-title">Tambah Akun</div>
+        </div>
+        <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+          <div>
+            <label class="field-label">Nama Lengkap *</label>
+            <input id="au-name" class="field-input" placeholder="Budi Santoso, S.Pd">
+          </div>
+          <div>
+            <label class="field-label">Email *</label>
+            <input id="au-email" class="field-input" type="email" placeholder="budi@<%= school.SCHOOL_DOMAIN %>">
+          </div>
+          <div>
+            <label class="field-label">Role *</label>
+            <select id="au-role" class="field-input">
+              <option value="guru">Guru — CBT, MCP, Classroom (read)</option>
+              <option value="operator">Operator — Semua kecuali Security</option>
+              <option value="super_admin">Super Admin — Akses penuh</option>
+            </select>
+          </div>
+          <div id="au-pass-group">
+            <label class="field-label">Password *</label>
+            <input id="au-password" class="field-input" type="password" placeholder="Min. 6 karakter">
+            <div style="font-size:11px;color:var(--muted);margin-top:5px">
+              💡 User akan diminta ganti password saat login pertama
+            </div>
+          </div>
+        </div>
+        <div style="padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="closeModal('modal-admin-user')">Batal</button>
+          <button class="btn btn-primary" id="btn-save-admin-user" onclick="saveAdminUser()">Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Reset Password -->
+    <div class="modal-overlay" id="modal-reset-pass">
+      <div class="modal" style="max-width:380px;padding:0;overflow:hidden">
+        <div style="padding:18px 22px 14px;border-bottom:1px solid var(--border)">
+          <div class="modal-title">🔑 Reset Password</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px" id="reset-pass-name"></div>
+        </div>
+        <div style="padding:18px 22px">
+          <label class="field-label">Password Baru *</label>
+          <input id="rp-password" class="field-input" type="password" placeholder="Min. 6 karakter">
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">
+            User akan diminta ganti password saat login berikutnya.
+          </div>
+        </div>
+        <div style="padding:14px 22px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-ghost" onclick="closeModal('modal-reset-pass')">Batal</button>
+          <button class="btn btn-primary" onclick="doResetPassword()">Reset Password</button>
+        </div>
+      </div>
+    </div>
+  </div>

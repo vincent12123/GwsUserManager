@@ -1,0 +1,89 @@
+  <!-- ── BULK PAGE ── -->
+  <div class="page" id="page-bulk">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+      <!-- Form Input -->
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">📋 Input Data User</div><div class="card-sub-t">Satu baris = satu user</div></div>
+        </div>
+        <div class="card-body">
+          <div style="background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:12px;margin-bottom:14px;font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8">
+            Format: <strong>NamaDepan,NamaBelakang,username,OrgUnit</strong><br>
+            Contoh:<br>
+            Ahmad,Fauzi,ahmad.fauzi,<%= school.DEFAULT_TEACHER_OU %><br>
+            Budi,Hartono,budi.hartono,<%= school.DEFAULT_STUDENT_OU %><br>
+            Siti,Rahayu,siti.rahayu,<%= school.DEFAULT_STAFF_OU %>
+          </div>
+          <div style="margin-bottom:14px">
+            <label class="field-label">Data User</label>
+            <textarea id="bulk-textarea" class="field-input" rows="12" style="resize:vertical;font-family:var(--mono);font-size:12px" placeholder="Ahmad,Fauzi,ahmad.fauzi,/Guru&#10;Budi,Hartono,budi.hartono,/Siswa"></textarea>
+          </div>
+          <div style="margin-bottom:14px">
+            <label class="field-label">Password Default (opsional)</label>
+            <input type="text" id="bulk-password" class="field-input" placeholder="Kosongkan = pakai DEFAULT_PASSWORD dari .env">
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="previewBulk()">👁 Preview</button>
+            <button class="btn btn-primary" id="bulk-submit-btn" onclick="submitBulk()" style="flex:1;justify-content:center">🚀 Import Semua</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview & Result -->
+      <div>
+        <div class="card" id="bulk-preview-card" style="display:none;margin-bottom:16px">
+          <div class="card-head">
+            <div><div class="card-title">👁 Preview Data</div><div class="card-sub-t" id="bulk-preview-count">-</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Nama Depan</th><th>Nama Belakang</th><th>Username</th><th>Org Unit</th></tr></thead>
+              <tbody id="bulk-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" id="bulk-result-card" style="display:none">
+          <div class="card-head">
+            <div><div class="card-title">📊 Hasil Import</div></div>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Diproses</div>
+                <div style="font-size:24px;font-weight:800;margin-top:4px" id="res-total">0</div>
+              </div>
+              <div style="background:var(--green-lt);border:1px solid rgba(14,159,110,.2);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Berhasil</div>
+                <div style="font-size:24px;font-weight:800;color:var(--green);margin-top:4px" id="res-success">0</div>
+              </div>
+              <div style="background:var(--red-lt);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:14px;text-align:center">
+                <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Gagal</div>
+                <div style="font-size:24px;font-weight:800;color:var(--red);margin-top:4px" id="res-failed">0</div>
+              </div>
+            </div>
+            <div id="res-failed-list"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">📥 Upload CSV</div><div class="card-sub-t">Format sama, langsung dari file</div></div>
+          </div>
+          <div class="card-body">
+            <div style="background:var(--surface2);border:1px dashed var(--border);border-radius:8px;padding:10px;margin-bottom:12px;font-family:var(--mono);font-size:11px;color:var(--muted)">
+              firstName,lastName,email,orgUnit,password
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="file" id="csv-file" accept=".csv" class="field-input" style="flex:1;padding:7px 10px">
+              <button class="btn btn-primary" onclick="uploadCSV()" id="csv-btn">📤 Upload</button>
+              <button class="btn btn-ghost" onclick="downloadCSVTemplate()">⬇ Template</button>
+            </div>
+            <div id="csv-result" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>

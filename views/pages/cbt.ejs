@@ -1,0 +1,259 @@
+  <!-- ── CBT MANAGER PAGE ── -->
+  <div class="page" id="page-cbt">
+
+    <!-- Tab buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px;flex-wrap:wrap">
+      <button class="btn cbt-tab-btn active" id="cbt-tab-sessions"  onclick="switchCBTTab('sessions')"  style="justify-content:center">📋 Sesi Ujian</button>
+      <button class="btn cbt-tab-btn"        id="cbt-tab-soal"      onclick="switchCBTTab('soal')"      style="justify-content:center">📝 Import Soal</button>
+      <button class="btn cbt-tab-btn"        id="cbt-tab-monitor"   onclick="switchCBTTab('monitor')"   style="justify-content:center">📊 Monitor Live</button>
+      <button class="btn cbt-tab-btn"        id="cbt-tab-cheatlog"  onclick="switchCBTTab('cheatlog')"  style="justify-content:center">⚠️ Anti-Cheat Log</button>
+      <button class="btn cbt-tab-btn"        id="cbt-tab-results"   onclick="switchCBTTab('results')"   style="justify-content:center">📈 Hasil & Nilai</button>
+      <div style="flex:1"></div>
+      <a href="/cbt-siswa.html" target="_blank" class="btn btn-ghost" style="color:var(--green);border-color:var(--green)">🔗 Buka Halaman Siswa</a>
+    </div>
+
+    <!-- TAB: Sesi Ujian -->
+    <div id="cbt-content-sessions" class="cbt-tab-content">
+      <div class="card">
+        <div class="toolbar">
+          <div><div class="card-title" style="font-size:15px">📋 Daftar Sesi Ujian</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="loadCBTSessions()">⟳ Refresh</button>
+            <button class="btn btn-primary" onclick="openCreateCBT()">+ Buat Sesi Baru</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Nama Ujian</th>
+              <th style="text-align:center">Token Akses</th>
+              <th style="text-align:center">Durasi</th>
+              <th style="text-align:center">Status</th>
+              <th>Dibuat</th>
+              <th style="text-align:center">Aksi</th>
+            </tr></thead>
+            <tbody id="cbt-sessions-tbody">
+              <tr><td colspan="6" class="state-box">
+                <div class="state-emoji">📋</div>
+                <div class="state-title">Klik Refresh untuk memuat sesi</div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Import Soal -->
+    <div id="cbt-content-soal" class="cbt-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px">📝 Import Soal ke CBT Engine</div>
+            <div class="card-sub-t">Upload JSON dari MCP Generator atau ambil dari Bank Soal</div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:14px">
+
+          <!-- Pilih Sesi -->
+          <div>
+            <label class="field-label" style="margin-bottom:6px;display:block">Pilih Sesi Ujian</label>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select id="cbt-soal-session" class="field-input" style="flex:1" onchange="onCBTSoalSessionChange()">
+                <option value="">-- Pilih sesi --</option>
+              </select>
+              <span id="cbt-soal-session-info" style="font-size:12px;color:var(--muted);white-space:nowrap"></span>
+            </div>
+          </div>
+
+          <!-- Sub-tab: JSON vs Bank -->
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);padding-bottom:0">
+            <button id="cbt-import-tab-json" class="btn btn-ghost"
+              style="font-size:12px;border-radius:8px 8px 0 0;border-bottom:2px solid var(--blue);color:var(--blue)"
+              onclick="switchCBTImportTab('json')">📁 Upload JSON</button>
+            <button id="cbt-import-tab-bank" class="btn btn-ghost"
+              style="font-size:12px;border-radius:8px 8px 0 0;border-bottom:2px solid transparent"
+              onclick="switchCBTImportTab('bank')">📚 Dari Bank Soal</button>
+          </div>
+
+          <!-- Panel: JSON -->
+          <div id="cbt-import-panel-json">
+            <div style="padding:10px 12px;background:var(--accent-lt);border:1px solid rgba(26,110,250,.2);border-radius:8px;font-size:12px;color:var(--accent-dk);margin-bottom:10px">
+              💡 Soal di-grade otomatis untuk PG, Essay dinilai manual di tab Hasil & Nilai.
+            </div>
+            <div>
+              <label class="field-label" style="margin-bottom:6px;display:block">Upload JSON Soal (MCP Generator)</label>
+              <input type="file" id="cbt-soal-file" accept=".json" class="field-input"
+                onchange="onCBTSoalFile(this)">
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">
+                Format: <code>{"soal":[{"no":1,"tipe":"PG","soal":"...","kunci":"A","bobot":1}]}</code>
+              </div>
+            </div>
+            <div id="cbt-soal-preview" style="display:none;margin-top:10px">
+              <label class="field-label" style="margin-bottom:6px;display:block">Preview Soal</label>
+              <div class="table-wrap" style="max-height:220px;overflow-y:auto">
+                <table>
+                  <thead><tr><th>No</th><th>Tipe</th><th>Soal</th><th style="text-align:center">Bobot</th><th>Kunci</th></tr></thead>
+                  <tbody id="cbt-soal-preview-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px">
+              <button class="btn btn-primary" id="btn-cbt-import-soal" onclick="doImportSoalCBT()" disabled>
+                💾 Import ke Sesi
+              </button>
+              <div id="cbt-soal-result-info" style="display:none;align-items:center;gap:8px;font-size:13px;color:var(--green)">
+                ✅ <span id="cbt-soal-result-txt"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel: Bank Soal -->
+          <div id="cbt-import-panel-bank" style="display:none">
+            <!-- Filter Bank -->
+            <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">
+              <select id="cbt-bank-mapel" class="field-input" style="max-width:150px;padding:7px 10px;font-size:12px"
+                onchange="loadCBTBankSoal(true)">
+                <option value="">Semua Mapel</option>
+              </select>
+              <select id="cbt-bank-kelas" class="field-input" style="max-width:110px;padding:7px 10px;font-size:12px"
+                onchange="loadCBTBankSoal(true)">
+                <option value="">Semua Kelas</option>
+                <option>X</option><option>XI</option><option>XII</option>
+              </select>
+              <select id="cbt-bank-tipe" class="field-input" style="max-width:110px;padding:7px 10px;font-size:12px"
+                onchange="loadCBTBankSoal(true)">
+                <option value="">Semua Tipe</option>
+                <option value="PG">PG</option>
+                <option value="ES">Essay</option>
+              </select>
+              <input id="cbt-bank-search" class="field-input" placeholder="Cari soal..."
+                style="max-width:180px;padding:7px 10px;font-size:12px"
+                oninput="clearTimeout(window._cbtBankT);window._cbtBankT=setTimeout(()=>loadCBTBankSoal(true),400)">
+              <span id="cbt-bank-count" style="font-size:12px;color:var(--muted);align-self:center"></span>
+            </div>
+            <!-- Action bar -->
+            <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+              <button class="btn btn-ghost" style="font-size:12px" onclick="selectAllCBTBank()">Pilih Semua</button>
+              <button class="btn btn-ghost" style="font-size:12px" onclick="selectRandomCBTBank()">🎲 Pilih Acak</button>
+              <span id="cbt-bank-selected-count" style="font-size:12px;color:var(--muted)">0 dipilih</span>
+              <button class="btn btn-primary" style="margin-left:auto;font-size:12px" id="btn-cbt-from-bank"
+                onclick="importDariBankToCBT()" disabled>
+                ➕ Tambahkan ke Sesi
+              </button>
+            </div>
+            <!-- List Bank -->
+            <div class="table-wrap" style="max-height:320px;overflow-y:auto">
+              <table>
+                <thead><tr>
+                  <th style="width:32px"><input type="checkbox" id="cb-bank-all" onchange="toggleAllCBTBank(this)"></th>
+                  <th>Soal</th><th>Mapel</th><th style="text-align:center">Tipe</th>
+                  <th style="text-align:center">Level</th><th style="text-align:center">Bobot</th>
+                </tr></thead>
+                <tbody id="cbt-bank-tbody">
+                  <tr><td colspan="6" class="state-box">
+                    <div class="state-emoji">📚</div>
+                    <div class="state-title">Pilih mapel untuk memuat soal</div>
+                  </td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="cbt-bank-result" style="display:none;margin-top:8px;font-size:13px;color:var(--green)"></div>
+          </div>
+
+          <div id="cbt-soal-existing" style="display:none;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px">
+            Soal saat ini: <strong id="cbt-soal-existing-count">0</strong> soal sudah diimport ke sesi ini.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Monitor Live -->
+    <div id="cbt-content-monitor" class="cbt-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px">📊 Monitor Live — <span id="cbt-monitor-title">-</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Auto-refresh setiap 10 detik</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadMonitorData(activeCBTSession?.id)">⟳ Refresh</button>
+        </div>
+        <!-- Stats -->
+        <div style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+          <div style="text-align:center;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px">
+            <div style="font-size:22px;font-weight:700" id="mon-total">0</div>
+            <div style="font-size:11px;color:var(--muted)">Total</div>
+          </div>
+          <div style="text-align:center;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px">
+            <div style="font-size:22px;font-weight:700;color:var(--green)" id="mon-active">0</div>
+            <div style="font-size:11px;color:var(--muted)">Sedang ujian</div>
+          </div>
+          <div style="text-align:center;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px">
+            <div style="font-size:22px;font-weight:700;color:var(--accent)" id="mon-submitted">0</div>
+            <div style="font-size:11px;color:var(--muted)">Sudah kumpul</div>
+          </div>
+          <div style="text-align:center;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px">
+            <div style="font-size:22px;font-weight:700;color:var(--muted)" id="mon-notjoin">0</div>
+            <div style="font-size:11px;color:var(--muted)">Belum bergabung</div>
+          </div>
+          <div style="text-align:center;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px">
+            <div style="font-size:22px;font-weight:700;color:var(--amber)" id="mon-risky">0</div>
+            <div style="font-size:11px;color:var(--muted)">Lokasi mencurigakan</div>
+          </div>
+          <div style="text-align:center;padding:8px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;min-width:80px">
+            <div style="font-size:22px;font-weight:700;color:var(--red)" id="mon-cheats">0</div>
+            <div style="font-size:11px;color:var(--muted)">Tab switch</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Siswa</th>
+              <th style="text-align:center">Status</th>
+              <th>IP Address</th>
+              <th>Lokasi</th>
+              <th>Bergabung</th>
+              <th>Dikumpulkan</th>
+            </tr></thead>
+            <tbody id="cbt-monitor-tbody">
+              <tr><td colspan="6" class="state-box"><div class="state-title">Pilih sesi untuk dimonitor</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Anti-Cheat Log -->
+    <div id="cbt-content-cheatlog" class="cbt-tab-content" style="display:none">
+      <div class="card">
+        <div class="toolbar">
+          <div>
+            <div class="card-title" style="font-size:15px">⚠️ Anti-Cheat Log</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Total: <strong id="cbt-cheat-count">0</strong> kejadian</div>
+          </div>
+          <button class="btn btn-ghost" onclick="loadCheatLog(activeCBTSession?.id)">⟳ Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Waktu</th><th>Siswa</th><th>Event</th><th>Detail</th>
+            </tr></thead>
+            <tbody id="cbt-cheat-tbody">
+              <tr><td colspan="4" class="state-box"><div class="state-title">Pilih sesi untuk lihat log</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Hasil -->
+    <div id="cbt-content-results" class="cbt-tab-content" style="display:none">
+      <div class="card">
+        <div class="card-body" id="cbt-results-area">
+          <div style="padding:40px;text-align:center;color:var(--muted)">
+            Pilih sesi dari tab Sesi Ujian → klik tombol Monitor → lalu buka tab Hasil & Nilai.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>

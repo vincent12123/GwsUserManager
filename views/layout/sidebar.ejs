@@ -1,0 +1,43 @@
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">🏫</div>
+    <div class="brand-name">GWS Manager</div>
+    <div class="brand-sub"><%= school.SCHOOL_SHORT_NAME %></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Umum</div>
+    <button class="nav-item active" onclick="navigate('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
+    <button class="nav-item" id="nav-adminusers" onclick="navigate('adminusers')"><span class="nav-icon">⚙️</span> Kelola Akun Admin</button>
+
+    <div class="nav-section-label">Manajemen Akun</div>
+    <button class="nav-item" onclick="navigate('users')"><span class="nav-icon">👥</span> User Manager</button>
+    <button class="nav-item" onclick="navigate('bulk')"><span class="nav-icon">📋</span> Bulk Tambah User</button>
+
+    <div class="nav-section-label">Pembelajaran</div>
+    <button class="nav-item" onclick="navigate('classroom')"><span class="nav-icon">🏫</span> Classroom Manager</button>
+
+    <div class="nav-section-label">Ujian (CBT)</div>
+    <button class="nav-item" onclick="navigate('cbt')"><span class="nav-icon">📝</span> CBT Manager</button>
+    <button class="nav-item" onclick="navigate('cbtpkg')"><span class="nav-icon">🚪</span> Multi-Ruang CBT</button>
+    <button class="nav-item" onclick="navigate('mcp')"><span class="nav-icon">🤖</span> MCP Generator</button>
+    <button class="nav-item" onclick="navigate('bank')"><span class="nav-icon">📚</span> Bank Soal</button>
+
+    <div class="nav-section-label">Keamanan</div>
+    <button class="nav-item" onclick="navigate('security')"><span class="nav-icon">🛡️</span> Security Center</button>
+    <button class="nav-item" onclick="navigate('driveaudit')"><span class="nav-icon">🔍</span> Drive Audit</button>
+    <button class="nav-item" onclick="navigate('audit')"><span class="nav-icon">📋</span> Audit Log</button>
+    <button class="nav-item" onclick="navigate('sspr')"><span class="nav-icon">🔑</span> Log Reset Password</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="usr-info">
+      <div class="usr-avatar">👤</div>
+      <div class="usr-text">
+        <div class="usr-name" id="usr-name">—</div>
+        <div class="usr-role" id="usr-role">—</div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()" title="Keluar">⏻</button>
+    </div>
+    <div class="footer-ver">v2.0 — GWS Manager</div>
+  </div>
+</aside>

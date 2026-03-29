@@ -1,0 +1,63 @@
+  <!-- ── SSPR LOG PAGE ── -->
+  <div class="page" id="page-sspr">
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="sspr-stats-grid">
+      <div class="stat-card"><div class="spinner"></div></div>
+      <div class="stat-card"><div class="spinner"></div></div>
+      <div class="stat-card"><div class="spinner"></div></div>
+      <div class="stat-card"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Info + QR -->
+    <div style="display:grid;grid-template-columns:1fr auto;gap:16px;margin-bottom:16px;align-items:start">
+      <div class="card" style="padding:16px 20px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">🔑 SSPR Kiosk — Portal Reset Password Mandiri</div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.7">
+          Siswa dapat reset password Google akun sekolahnya sendiri tanpa bantuan Admin.
+          Bagikan link atau QR code di bawah ke siswa.
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <code id="sspr-url" style="font-size:12px;padding:6px 12px;background:var(--surface2);
+            border:1px solid var(--border);border-radius:6px;color:var(--accent)">
+            http://... /reset
+          </code>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="copySSPRLink()">📋 Salin</button>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="openSSPRPage()">🔗 Buka</button>
+        </div>
+      </div>
+      <div style="background:white;padding:12px;border-radius:12px;display:flex;align-items:center;justify-content:center">
+        <canvas id="sspr-qr" width="120" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- Log table -->
+    <div class="card">
+      <div class="toolbar">
+        <div>
+          <div class="card-title">Riwayat Reset Password</div>
+          <div class="card-sub-t">Semua aktivitas SSPR Kiosk</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input id="sspr-search" class="field-input" placeholder="Cari email..."
+            style="max-width:220px;padding:7px 12px;font-size:12px"
+            oninput="clearTimeout(window._ssprT);window._ssprT=setTimeout(loadSSPRLog,400)">
+          <button class="btn btn-ghost" onclick="loadSSPRLog()">⟳ Refresh</button>
+          <button class="btn btn-ghost" style="color:var(--red);font-size:12px"
+            onclick="clearSSPRLog()">🗑 Hapus Log Lama</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Waktu</th><th>Email</th><th>Status</th><th>IP Address</th>
+          </tr></thead>
+          <tbody id="sspr-tbody">
+            <tr><td colspan="4" class="state-box">
+              <div class="state-emoji">🔑</div>
+              <div class="state-title">Belum ada log</div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>

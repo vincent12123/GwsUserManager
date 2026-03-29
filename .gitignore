@@ -1,0 +1,77 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# .gitignore — GWS Manager v2.0
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+.pnpm-debug.log*
+
+# ── Environment & Secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ── Google Service Account (SANGAT RAHASIA — jangan pernah di-push) ──────────
+*.json
+!package.json
+!package-lock.json
+!manifest.json
+
+# ── Database (SQLite) ─────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ── Upload & Output Folder ────────────────────────────────────────────────────
+mcp_uploads/
+mcp_outputs/
+audit_outputs/
+public/icons/*.png
+
+# ── Log Files ─────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── OS Files ──────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Editor & IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Build / Temp ──────────────────────────────────────────────────────────────
+dist/
+build/
+tmp/
+temp/
+*.backup
+*.bak
+index\ copy.html
+public/js/users\ copy.js
+test.html
+project_summary_v2.html
+gws_manager_presentation.html
+
+# ── Prisma / ORM (kalau nanti dipakai) ────────────────────────────────────────
+prisma/.env
+
+# ── Tools output ──────────────────────────────────────────────────────────────
+tools/*.pdf
+tools/*.docx
+tools/*.xlsx
