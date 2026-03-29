@@ -22,27 +22,6 @@ if (existingCols.length > 0) {
   }
 }
 
-// ── INDEX untuk performa 200+ siswa ujian bersamaan ───────────────────────────
-db.exec(`
-  CREATE INDEX IF NOT EXISTS idx_jawaban_session_email
-    ON cbt_jawaban(session_id, user_email);
-
-  CREATE INDEX IF NOT EXISTS idx_participants_session_email
-    ON cbt_participants(session_id, user_email);
-
-  CREATE INDEX IF NOT EXISTS idx_cheat_session_email
-    ON cbt_cheat_log(session_id, user_email);
-
-  CREATE INDEX IF NOT EXISTS idx_soal_session
-    ON cbt_soal(session_id);
-
-  CREATE INDEX IF NOT EXISTS idx_sessions_token
-    ON cbt_sessions(token);
-
-  CREATE INDEX IF NOT EXISTS idx_sessions_status
-    ON cbt_sessions(status);
-`);
-
 // ── TABEL SESI ────────────────────────────────────────────────────────────────
 db.exec(`
   CREATE TABLE IF NOT EXISTS cbt_sessions (
@@ -119,6 +98,28 @@ db.exec(`
     saved_at     TEXT DEFAULT (datetime('now','localtime')),
     UNIQUE(session_id, user_email, nomor)
   );
+`);
+
+// ── INDEX untuk performa 200+ siswa ujian bersamaan ──────────────────────────
+// HARUS setelah semua CREATE TABLE selesai
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_jawaban_session_email
+    ON cbt_jawaban(session_id, user_email);
+
+  CREATE INDEX IF NOT EXISTS idx_participants_session_email
+    ON cbt_participants(session_id, user_email);
+
+  CREATE INDEX IF NOT EXISTS idx_cheat_session_email
+    ON cbt_cheat_log(session_id, user_email);
+
+  CREATE INDEX IF NOT EXISTS idx_soal_session
+    ON cbt_soal(session_id);
+
+  CREATE INDEX IF NOT EXISTS idx_sessions_token
+    ON cbt_sessions(token);
+
+  CREATE INDEX IF NOT EXISTS idx_sessions_status
+    ON cbt_sessions(status);
 `);
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -566,4 +567,6 @@ module.exports = {
   logCheatEvent, getCheatLog, getSessionStats,
   importSoal, appendSoal, getSoal, getSoalShuffled, getSoalCount,
   saveJawaban, saveEssayNilai, getJawabanSiswa, getAllJawaban, getRekap,
+  // Ekspor instance db agar modul lain (bank.js, sspr.js) bisa pakai koneksi yang sama
+  _db: db,
 };

@@ -2,14 +2,14 @@
 // DB: BANK SOAL — Library soal permanen, terpisah dari sesi CBT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const Database       = require('better-sqlite3');
 const path           = require('path');
 const { randomUUID } = require('crypto');
 
-const DB_PATH = path.join(__dirname, '..', 'cbt.db');
-const db      = new Database(DB_PATH);
-
-db.pragma('journal_mode = WAL');
+// ── Gunakan koneksi db yang SAMA dengan cbt.js ────────────────────────────────
+// Ini memastikan semua tabel (cbt_jawaban, dll) sudah ada sebelum bank_soal dibuat
+// dan menghindari race condition multiple SQLite connections
+const cbtModule = require('./cbt');
+const db = cbtModule._db;
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS bank_soal (
