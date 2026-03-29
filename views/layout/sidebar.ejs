@@ -1,9 +1,15 @@
 <!-- SIDEBAR -->
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-logo">🏫</div>
-    <div class="brand-name">GWS Manager</div>
-    <div class="brand-sub"><%= school.SCHOOL_SHORT_NAME %></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div class="brand-logo">🏫</div>
+        <div class="brand-name">GWS Manager</div>
+        <div class="brand-sub"><%= school.SCHOOL_SHORT_NAME %></div>
+      </div>
+      <!-- Tombol close — hanya tampil di mobile -->
+      <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Tutup menu">✕</button>
+    </div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Umum</div>

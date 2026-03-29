@@ -1,11 +1,20 @@
 <%- include('layout/head') %>
 <%- include('layout/sidebar') %>
 
+<!-- Sidebar overlay untuk mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
 <div class="main">
   <header class="topbar">
-    <div>
-      <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-sub" id="topbar-sub">Ringkasan Google Workspace</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <!-- Hamburger — hanya tampil di mobile -->
+      <button class="hamburger-btn" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="topbar-sub">Ringkasan Google Workspace</div>
+      </div>
     </div>
     <div class="topbar-actions" id="topbar-actions"></div>
   </header>
