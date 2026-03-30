@@ -274,7 +274,7 @@ function mcpOpenSoal(idx) {
     ${isPG ? `
     <div style="margin-bottom:12px">
       <label class="field-label">Pilihan Jawaban</label>
-      ${['A','B','C','D'].map(h => `
+      ${['A','B','C','D','E'].map(h => `
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="width:22px;height:22px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${h}</span>
           <input id="ed-opsi-${h}" type="text" value="${esc(s.opsi?.[h]||'')}"
@@ -318,6 +318,7 @@ function mcpReadEditor(s) {
       opsiB: document.getElementById('ed-opsi-B')?.value || '',
       opsiC: document.getElementById('ed-opsi-C')?.value || '',
       opsiD: document.getElementById('ed-opsi-D')?.value || '',
+      opsiE: document.getElementById('ed-opsi-E')?.value || '',
       kunci: kunciEl?.value || s.kunci || '',
     };
   }
@@ -336,7 +337,9 @@ async function mcpSaveSoal(idx) {
     });
     // Update state lokal
     Object.assign(s, fields, {
-      opsi: s.tipe === 'PG' ? { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD } : undefined,
+      opsi: s.tipe === 'PG'
+        ? { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD, E: fields.opsiE }
+        : undefined,
     });
     toast('Soal disimpan', 'success');
   } catch(e) { toast('Gagal simpan: ' + e.message, 'error'); }
@@ -354,7 +357,7 @@ async function mcpSaveAndSetStatus(idx, status) {
     });
     // Update state lokal
     s.reviewStatus = status;
-    if (s.tipe === 'PG') s.opsi = { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD };
+    if (s.tipe === 'PG') s.opsi = { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD, E: fields.opsiE };
     s.soal = fields.soal; s.bobot = fields.bobot; s.pembahasan = fields.pembahasan; s.kunci = fields.kunci;
 
     mcpRenderSidebar();
@@ -505,6 +508,7 @@ async function mcpSimpanKeBank() {
           opsi_b: s.opsi_b || s.b || (s.opsi?.B) || null,
           opsi_c: s.opsi_c || s.c || (s.opsi?.C) || null,
           opsi_d: s.opsi_d || s.d || (s.opsi?.D) || null,
+          opsi_e: s.opsi_e || s.e || (s.opsi?.E) || null,
           kunci:  s.kunci  || s.jawaban || null,
           bobot:  s.bobot  || s.poin || 1,
         })),

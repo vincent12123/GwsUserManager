@@ -35,6 +35,7 @@ db.exec(`
     opsi_b         TEXT,
     opsi_c         TEXT,
     opsi_d         TEXT,
+    opsi_e         TEXT,
     kunci          TEXT,
     bobot          INTEGER DEFAULT 1,
     pembahasan     TEXT,
@@ -42,6 +43,9 @@ db.exec(`
     FOREIGN KEY(package_id) REFERENCES mcp_packages(id) ON DELETE CASCADE
   );
 `);
+
+// ── MIGRATION: tambah opsi_e jika tabel sudah ada sebelumnya ─────────────────
+try { db.exec(`ALTER TABLE mcp_soal ADD COLUMN opsi_e TEXT`); } catch(_) {}
 
 // ── PACKAGES ──────────────────────────────────────────────────────────────────
 
@@ -58,15 +62,15 @@ function createPackage({ mapel, kelas, config, soalArr }) {
 
   // Insert semua soal sekaligus dalam satu transaksi
   const ins = db.prepare(`
-    INSERT INTO mcp_soal (package_id, no, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, kunci, bobot, pembahasan)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO mcp_soal (package_id, no, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, pembahasan)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   db.transaction(items => {
     for (const s of items) {
       ins.run(
         id, s.no, (s.tipe || 'PG').toUpperCase(),
         s.soal,
-        s.opsi?.A || null, s.opsi?.B || null, s.opsi?.C || null, s.opsi?.D || null,
+        s.opsi?.A || null, s.opsi?.B || null, s.opsi?.C || null, s.opsi?.D || null, s.opsi?.E || null,
         s.kunci || null,
         s.bobot || 1,
         s.pembahasan || null
@@ -118,14 +122,18 @@ function getApprovedSoal(packageId) {
 }
 
 function updateSoal(id, fields) {
-  const { soal, opsiA, opsiB, opsiC, opsiD, kunci, bobot, pembahasan, reviewStatus } = fields;
+  const { soal, opsiA, opsiB, opsiC, opsiD, opsiE, kunci, bobot, pembahasan, reviewStatus } = fields;
   db.prepare(`
     UPDATE mcp_soal SET
-      soal = ?, opsi_a = ?, opsi_b = ?, opsi_c = ?, opsi_d = ?,
+      soal = ?, opsi_a = ?, opsi_b = ?, opsi_c = ?, opsi_d = ?, opsi_e = ?,
       kunci = ?, bobot = ?, pembahasan = ?, review_status = ?
     WHERE id = ?
-  `).run(soal, opsiA||null, opsiB||null, opsiC||null, opsiD||null,
-         kunci||null, bobot||1, pembahasan||null, reviewStatus||'pending', id);
+  `).run(
+    soal,
+    opsiA || null, opsiB || null, opsiC || null, opsiD || null, opsiE || null,
+    kunci || null, bobot || 1, pembahasan || null, reviewStatus || 'pending',
+    id
+  );
   // Update timestamp package
   const row = db.prepare(`SELECT package_id FROM mcp_soal WHERE id = ?`).get(id);
   if (row) db.prepare(`UPDATE mcp_packages SET updated_at = datetime('now','localtime') WHERE id = ?`).run(row.package_id);
@@ -152,7 +160,7 @@ function soalToObj(row) {
     tipe:         row.tipe,
     soal:         row.soal,
     opsi: row.tipe === 'PG' ? {
-      A: row.opsi_a, B: row.opsi_b, C: row.opsi_c, D: row.opsi_d,
+      A: row.opsi_a, B: row.opsi_b, C: row.opsi_c, D: row.opsi_d, E: row.opsi_e,
     } : undefined,
     kunci:        row.kunci,
     bobot:        row.bobot,

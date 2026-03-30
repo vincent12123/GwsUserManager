@@ -13,7 +13,6 @@ db.pragma('journal_mode = WAL');
 // ── MIGRASI — tambah kolom baru kalau belum ada ───────────────────────────────
 const existingCols = db.prepare(`PRAGMA table_info(cbt_sessions)`).all().map(c => c.name);
 if (existingCols.length > 0) {
-  // Tabel sudah ada, cek kolom baru
   if (!existingCols.includes('token_interval')) {
     db.exec(`ALTER TABLE cbt_sessions ADD COLUMN token_interval INTEGER DEFAULT 0`);
   }
@@ -21,6 +20,15 @@ if (existingCols.length > 0) {
     db.exec(`ALTER TABLE cbt_sessions ADD COLUMN token_expires_at TEXT`);
   }
 }
+
+// Migration cbt_participants — room_id
+const partCols = db.prepare(`PRAGMA table_info(cbt_participants)`).all().map(c => c.name);
+if (partCols.length > 0 && !partCols.includes('room_id')) {
+  db.exec(`ALTER TABLE cbt_participants ADD COLUMN room_id INTEGER`);
+}
+
+// Migration cbt_soal — opsi_e
+try { db.exec(`ALTER TABLE cbt_soal ADD COLUMN opsi_e TEXT`); } catch(_) {}
 
 // ── TABEL SESI ────────────────────────────────────────────────────────────────
 db.exec(`
@@ -46,19 +54,20 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS cbt_participants (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id  TEXT NOT NULL,
-    user_email  TEXT NOT NULL,
-    user_name   TEXT,
-    joined_at   TEXT,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id   TEXT NOT NULL,
+    room_id      INTEGER,
+    user_email   TEXT NOT NULL,
+    user_name    TEXT,
+    joined_at    TEXT,
     submitted_at TEXT,
-    ip_address  TEXT,
-    geo_country TEXT,
-    geo_region  TEXT,
-    geo_city    TEXT,
-    geo_isp     TEXT,
-    risk_level  TEXT DEFAULT 'safe',
-    status      TEXT DEFAULT 'enrolled',
+    ip_address   TEXT,
+    geo_country  TEXT,
+    geo_region   TEXT,
+    geo_city     TEXT,
+    geo_isp      TEXT,
+    risk_level   TEXT DEFAULT 'safe',
+    status       TEXT DEFAULT 'enrolled',
     UNIQUE(session_id, user_email)
   );
 
@@ -81,6 +90,7 @@ db.exec(`
     opsi_b      TEXT,
     opsi_c      TEXT,
     opsi_d      TEXT,
+    opsi_e      TEXT,
     kunci       TEXT,
     bobot       INTEGER DEFAULT 1,
     pembahasan  TEXT,
@@ -101,7 +111,6 @@ db.exec(`
 `);
 
 // ── INDEX untuk performa 200+ siswa ujian bersamaan ──────────────────────────
-// HARUS setelah semua CREATE TABLE selesai
 db.exec(`
   CREATE INDEX IF NOT EXISTS idx_jawaban_session_email
     ON cbt_jawaban(session_id, user_email);
@@ -135,17 +144,14 @@ function generateId() {
   return 'cbt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 }
 
-// Hitung token_expires_at berdasarkan interval (menit)
 function calcExpiry(intervalMinutes) {
-  if (!intervalMinutes || intervalMinutes === 0) return null; // 0 = permanen
+  if (!intervalMinutes || intervalMinutes === 0) return null;
   return new Date(Date.now() + intervalMinutes * 60 * 1000).toISOString();
 }
 
-// Rotate token — buat token baru, update expiry
 function rotateToken(sessionId) {
   const session = getSession(sessionId);
   if (!session) return null;
-
   let token = generateToken();
   while (db.prepare('SELECT id FROM cbt_sessions WHERE token = ? AND id != ?').get(token, sessionId)) {
     token = generateToken();
@@ -156,7 +162,6 @@ function rotateToken(sessionId) {
   return { token, expiresAt };
 }
 
-// Auto-rotate scheduler — panggil saat server start
 const rotateTimers = new Map();
 
 function scheduleRotation(sessionId) {
@@ -164,19 +169,17 @@ function scheduleRotation(sessionId) {
   if (!session || session.status !== 'active') return;
   if (!session.token_interval || session.token_interval === 0) return;
 
-  // Hitung kapan harus rotate berikutnya
-  const now        = Date.now();
-  const expiresAt  = session.token_expires_at ? new Date(session.token_expires_at).getTime() : now;
-  const delay      = Math.max(expiresAt - now, 1000);
+  const now       = Date.now();
+  const expiresAt = session.token_expires_at ? new Date(session.token_expires_at).getTime() : now;
+  const delay     = Math.max(expiresAt - now, 1000);
 
-  // Clear timer lama kalau ada
   if (rotateTimers.has(sessionId)) clearTimeout(rotateTimers.get(sessionId));
 
   const timer = setTimeout(() => {
     const s = getSession(sessionId);
     if (!s || s.status !== 'active') return;
     rotateToken(sessionId);
-    scheduleRotation(sessionId); // jadwalkan rotasi berikutnya
+    scheduleRotation(sessionId);
   }, delay);
 
   rotateTimers.set(sessionId, timer);
@@ -192,8 +195,8 @@ function stopRotation(sessionId) {
 // ── SESSION CRUD ──────────────────────────────────────────────────────────────
 
 function createSession({ name, mapel, kelas, courseId, duration = 90, scheduledAt, tokenInterval = 0, createdBy }) {
-  const id        = generateId();
-  let token       = generateToken();
+  const id  = generateId();
+  let token = generateToken();
   while (db.prepare('SELECT id FROM cbt_sessions WHERE token = ?').get(token)) {
     token = generateToken();
   }
@@ -284,8 +287,8 @@ function checkUngradedEssay(sessionId) {
     WHERE j.session_id = ? AND j.nomor IN (${ph})
   `).all(sessionId, ...essayNomors);
 
-  const ungraded  = allEssay.filter(j => j.nilai === null || j.nilai === 0);
-  const siswaSet  = {};
+  const ungraded = allEssay.filter(j => j.nilai === null || j.nilai === 0);
+  const siswaSet = {};
   ungraded.forEach(j => { siswaSet[j.user_email] = j.user_name || j.user_email; });
 
   return {
@@ -300,12 +303,10 @@ function checkUngradedEssay(sessionId) {
 function startSession(id) {
   const session = getSession(id);
   if (!session) return null;
-  // Set first expiry saat start
   const expiresAt = calcExpiry(session.token_interval);
   db.prepare(`UPDATE cbt_sessions SET status = 'active', started_at = datetime('now','localtime'), token_expires_at = ? WHERE id = ?`)
     .run(expiresAt, id);
   const updated = getSession(id);
-  // Jadwalkan rotasi kalau interval > 0
   if (session.token_interval > 0) scheduleRotation(id);
   return updated;
 }
@@ -388,32 +389,28 @@ function importSoal(sessionId, soalArr) {
   db.prepare('DELETE FROM cbt_jawaban WHERE session_id = ?').run(sessionId);
 
   const ins = db.prepare(`
-    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, kunci, bobot, pembahasan)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, pembahasan)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-
-  const insertMany = db.transaction((items) => {
+  db.transaction(items => {
     for (const s of items) {
       ins.run(
         sessionId, s.no, (s.tipe || 'PG').toUpperCase(),
         s.soal,
-        s.opsi?.A || null, s.opsi?.B || null, s.opsi?.C || null, s.opsi?.D || null,
-        s.kunci || null,
-        s.bobot || 1,
-        s.pembahasan || null
+        s.opsi?.A || null, s.opsi?.B || null, s.opsi?.C || null, s.opsi?.D || null, s.opsi?.E || null,
+        s.kunci || null, s.bobot || 1, s.pembahasan || null
       );
     }
-  });
-  insertMany(soalArr);
+  })(soalArr);
 }
 
 // Append soal tanpa hapus yang sudah ada (dipakai oleh Bank Soal → Sesi)
 function appendSoal(sessionId, soalArr) {
   const ins = db.prepare(`
-    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, kunci, bobot)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  const insertMany = db.transaction((items) => {
+  db.transaction(items => {
     for (const s of items) {
       ins.run(
         sessionId,
@@ -424,12 +421,11 @@ function appendSoal(sessionId, soalArr) {
         s.opsi?.B || s.opsi_b || null,
         s.opsi?.C || s.opsi_c || null,
         s.opsi?.D || s.opsi_d || null,
-        s.kunci || null,
-        s.bobot || 1
+        s.opsi?.E || s.opsi_e || null,
+        s.kunci || null, s.bobot || 1
       );
     }
-  });
-  insertMany(soalArr);
+  })(soalArr);
 }
 
 function getSoal(sessionId, withKunci = true) {
@@ -437,7 +433,7 @@ function getSoal(sessionId, withKunci = true) {
   return rows.map(r => {
     const s = {
       id: r.id, nomor: r.nomor, tipe: r.tipe, soal: r.soal, bobot: r.bobot,
-      opsi: r.tipe === 'PG' ? { A: r.opsi_a, B: r.opsi_b, C: r.opsi_c, D: r.opsi_d } : null,
+      opsi: r.tipe === 'PG' ? { A: r.opsi_a, B: r.opsi_b, C: r.opsi_c, D: r.opsi_d, E: r.opsi_e } : null,
     };
     if (withKunci) { s.kunci = r.kunci; s.pembahasan = r.pembahasan; }
     return s;
@@ -449,7 +445,6 @@ function getSoal(sessionId, withKunci = true) {
 function getSoalShuffled(sessionId, userEmail) {
   const rows = db.prepare('SELECT * FROM cbt_soal WHERE session_id = ? ORDER BY nomor').all(sessionId);
 
-  // Buat seed dari email untuk konsistensi (siswa yang sama selalu dapat urutan sama)
   let seed = 0;
   for (let i = 0; i < userEmail.length; i++) seed += userEmail.charCodeAt(i);
   seed = seed * 9301 + 49297;
@@ -459,32 +454,30 @@ function getSoalShuffled(sessionId, userEmail) {
     return seed / 233280;
   }
 
-  // Shuffle array soal
   const shuffled = [...rows];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(seededRand() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  // Juga acak opsi PG per soal (A/B/C/D diacak)
+  // Acak opsi PG per soal (A/B/C/D/E diacak, hanya opsi yang tidak kosong)
   return shuffled.map((r, displayIdx) => {
     let opsi = null;
     if (r.tipe === 'PG') {
-      const keys    = ['A', 'B', 'C', 'D'].filter(k => r[`opsi_${k.toLowerCase()}`]);
-      const vals    = keys.map(k => r[`opsi_${k.toLowerCase()}`]);
-      // Acak urutan opsi tapi track kunci baru
+      const keys = ['A', 'B', 'C', 'D', 'E'].filter(k => r[`opsi_${k.toLowerCase()}`]);
+      const vals = keys.map(k => r[`opsi_${k.toLowerCase()}`]);
       for (let i = vals.length - 1; i > 0; i--) {
         const j = Math.floor(seededRand() * (i + 1));
         [vals[i], vals[j]] = [vals[j], vals[i]];
         [keys[i], keys[j]] = [keys[j], keys[i]];
       }
       opsi = {};
-      ['A', 'B', 'C', 'D'].forEach((k, i) => { if (vals[i] !== undefined) opsi[k] = vals[i]; });
+      ['A', 'B', 'C', 'D', 'E'].forEach((k, i) => { if (vals[i] !== undefined) opsi[k] = vals[i]; });
     }
     return {
       id:           r.id,
-      nomor:        r.nomor,        // nomor asli untuk auto-grade
-      displayNomor: displayIdx + 1, // nomor tampilan (urutan acak)
+      nomor:        r.nomor,
+      displayNomor: displayIdx + 1,
       tipe:         r.tipe,
       soal:         r.soal,
       bobot:        r.bobot,
@@ -500,7 +493,6 @@ function getSoalCount(sessionId) {
 // ── JAWABAN ───────────────────────────────────────────────────────────────────
 
 function saveJawaban(sessionId, userEmail, nomor, jawaban) {
-  // Ambil soal untuk auto-grade PG
   const soal = db.prepare('SELECT * FROM cbt_soal WHERE session_id = ? AND nomor = ?').get(sessionId, nomor);
   let isCorrect = null;
   let nilai     = 0;
@@ -514,10 +506,10 @@ function saveJawaban(sessionId, userEmail, nomor, jawaban) {
     INSERT INTO cbt_jawaban (session_id, user_email, nomor, jawaban, is_correct, nilai, saved_at)
     VALUES (?, ?, ?, ?, ?, ?, datetime('now','localtime'))
     ON CONFLICT(session_id, user_email, nomor) DO UPDATE SET
-      jawaban   = excluded.jawaban,
+      jawaban    = excluded.jawaban,
       is_correct = excluded.is_correct,
-      nilai     = excluded.nilai,
-      saved_at  = excluded.saved_at
+      nilai      = excluded.nilai,
+      saved_at   = excluded.saved_at
   `).run(sessionId, userEmail, nomor, jawaban || null, isCorrect, nilai);
 
   return { isCorrect, nilai };
@@ -545,7 +537,6 @@ function getAllJawaban(sessionId) {
 }
 
 function getRekap(sessionId) {
-  // Rekap nilai per siswa
   return db.prepare(`
     SELECT
       user_email,

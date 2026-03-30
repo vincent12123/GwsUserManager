@@ -24,6 +24,7 @@ db.exec(`
     opsi_b     TEXT,
     opsi_c     TEXT,
     opsi_d     TEXT,
+    opsi_e     TEXT,
     kunci      TEXT,
     bobot      INTEGER DEFAULT 1,
     sumber     TEXT DEFAULT 'Manual',
@@ -50,15 +51,18 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_bank_tipe    ON bank_soal(tipe);
 `);
 
+// ── MIGRATION: tambah opsi_e jika tabel sudah ada sebelumnya ─────────────────
+try { db.exec(`ALTER TABLE bank_soal ADD COLUMN opsi_e TEXT`); } catch(_) {}
+
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
-function createSoal({ mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, kunci, bobot, sumber, tags }) {
+function createSoal({ mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, sumber, tags }) {
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO bank_soal (id, mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, kunci, bobot, sumber)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO bank_soal (id, mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, sumber)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, mapel, kelas || 'Semua', bab || null, tingkat || 'C2', tipe || 'PG',
-      soal, opsi_a || null, opsi_b || null, opsi_c || null, opsi_d || null,
+      soal, opsi_a || null, opsi_b || null, opsi_c || null, opsi_d || null, opsi_e || null,
       kunci || null, bobot || 1, sumber || 'Manual');
   if (tags?.length) setTags(id, tags);
   return getSoalById(id);
@@ -73,18 +77,18 @@ function getSoalById(id) {
 }
 
 function getAllSoal({ mapel, kelas, bab, tingkat, tipe, search, limit = 100, offset = 0 } = {}) {
-  const where = [];
+  const where  = [];
   const params = [];
 
-  if (mapel)  { where.push('mapel = ?');               params.push(mapel); }
+  if (mapel)  { where.push('mapel = ?');                               params.push(mapel); }
   if (kelas && kelas !== 'Semua') { where.push(`(kelas = ? OR kelas = 'Semua')`); params.push(kelas); }
-  if (bab)    { where.push('bab = ?');                 params.push(bab); }
-  if (tingkat){ where.push('tingkat = ?');              params.push(tingkat); }
-  if (tipe)   { where.push('tipe = ?');                 params.push(tipe); }
-  if (search) { where.push('soal LIKE ?');              params.push(`%${search}%`); }
+  if (bab)    { where.push('bab = ?');                                 params.push(bab); }
+  if (tingkat){ where.push('tingkat = ?');                             params.push(tingkat); }
+  if (tipe)   { where.push('tipe = ?');                                params.push(tipe); }
+  if (search) { where.push('soal LIKE ?');                             params.push(`%${search}%`); }
 
   const whereStr = where.length ? 'WHERE ' + where.join(' AND ') : '';
-  const total = db.prepare(`SELECT COUNT(*) as n FROM bank_soal ${whereStr}`).get(...params)?.n || 0;
+  const total    = db.prepare(`SELECT COUNT(*) as n FROM bank_soal ${whereStr}`).get(...params)?.n || 0;
 
   const rows = db.prepare(`
     SELECT s.*,
@@ -100,7 +104,7 @@ function getAllSoal({ mapel, kelas, bab, tingkat, tipe, search, limit = 100, off
 }
 
 function updateSoal(id, fields) {
-  const allowed = ['mapel','kelas','bab','tingkat','tipe','soal','opsi_a','opsi_b','opsi_c','opsi_d','kunci','bobot','sumber'];
+  const allowed = ['mapel','kelas','bab','tingkat','tipe','soal','opsi_a','opsi_b','opsi_c','opsi_d','opsi_e','kunci','bobot','sumber'];
   const sets    = Object.keys(fields).filter(k => allowed.includes(k)).map(k => `${k} = ?`);
   if (!sets.length) return getSoalById(id);
   sets.push(`updated_at = datetime('now','localtime')`);
@@ -160,11 +164,11 @@ function recordBulkUsage(soalIds, sessionId) {
 // ── STATISTIK ─────────────────────────────────────────────────────────────────
 
 function getStats() {
-  const total   = db.prepare(`SELECT COUNT(*) as n FROM bank_soal`).get()?.n || 0;
-  const byMapel = db.prepare(`SELECT mapel, COUNT(*) as n FROM bank_soal GROUP BY mapel ORDER BY n DESC`).all();
-  const byTipe  = db.prepare(`SELECT tipe, COUNT(*) as n FROM bank_soal GROUP BY tipe`).all();
+  const total     = db.prepare(`SELECT COUNT(*) as n FROM bank_soal`).get()?.n || 0;
+  const byMapel   = db.prepare(`SELECT mapel, COUNT(*) as n FROM bank_soal GROUP BY mapel ORDER BY n DESC`).all();
+  const byTipe    = db.prepare(`SELECT tipe, COUNT(*) as n FROM bank_soal GROUP BY tipe`).all();
   const byTingkat = db.prepare(`SELECT tingkat, COUNT(*) as n FROM bank_soal GROUP BY tingkat ORDER BY tingkat`).all();
-  const topUsed = db.prepare(`
+  const topUsed   = db.prepare(`
     SELECT s.id, s.soal, s.mapel, s.tipe, COUNT(u.session_id) as pakai_count
     FROM bank_soal s
     JOIN bank_soal_usage u ON u.soal_id = s.id

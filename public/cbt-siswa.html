@@ -12,6 +12,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CBT Siswa">
 <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+<!-- KaTeX — render notasi matematika -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
 <style>
@@ -684,6 +688,18 @@ const MAX_CHEAT=3;
 const TIMER_CIRC=138.2; // 2π × 22
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// Fix LaTeX commands corrupted oleh JSON escape sequences
+// \frac → \f (form feed) + rac, \theta → \t (tab) + heta, dll
+function fixLatex(s){
+  if(!s) return s;
+  return s
+    .replace(/\x08/g,'\\b')   // backspace  → \b (\beta, \binom)
+    .replace(/\x0C/g,'\\f')   // form feed  → \f (\frac, \forall)
+    .replace(/\x0D/g,'\\r')   // CR         → \r (\right, \rangle)
+    .replace(/\t/g,'\\t');     // tab        → \t (\theta, \text, \times)
+}
+
 function setScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function showOv(id){document.getElementById(id).classList.add('show');}
 function hideOv(id){document.getElementById(id).classList.remove('show');}
@@ -785,16 +801,19 @@ function renderSoal(idx){
   let body='';
   if(s.tipe==='PG'&&s.opsi){
     body='<div class="opsi-list">'+
-      ['A','B','C','D'].filter(k=>s.opsi[k]).map(k=>
+      ['A','B','C','D','E'].filter(k=>s.opsi[k]).map(k=>
         `<button class="opsi-btn${jaw===k?' selected':''}" onclick="pilih(${s.nomor},'${k}',this)">
           <span class="opsi-key">${k}</span>
-          <span class="opsi-text">${esc(s.opsi[k])}</span>
+          <span class="opsi-text">${esc(fixLatex(s.opsi[k]))}</span>
         </button>`
       ).join('')+'</div>';
   }else{
     body=`<div class="essay-wrap"><textarea class="essay-ta" id="ta-${s.nomor}" oninput="saveEssay(${s.nomor},this.value)" placeholder="Tulis jawaban Anda di sini...">${esc(jaw||'')}</textarea></div>`;
   }
-  let soalTxt=esc(s.soal).replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>');
+  // fixLatex: perbaiki backslash yang corrupt oleh JSON parse
+  let soalTxt=esc(fixLatex(s.soal))
+    .replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
+    .replace(/\n/g,'<br>');
   const answeredCount=Object.keys(JAWABAN).length;
   const dots=SOAL.map((q,i)=>{
     const cls=i===idx?'current':JAWABAN[q.nomor]?'answered':'';
@@ -818,6 +837,23 @@ function renderSoal(idx){
       </div>
       <div class="nav-grid">${dots}</div>
     </div>`;
+
+  // Render matematika dengan KaTeX setelah DOM diupdate
+  if (typeof renderMathInElement !== 'undefined') {
+    try {
+      renderMathInElement(document.getElementById('exam-body'), {
+        delimiters: [
+          { left: '$$', right: '$$', display: true  },
+          { left: '$',  right: '$',  display: false },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '\\[', right: '\\]', display: true  },
+        ],
+        ignoredTags: ['script','noscript','style','textarea','pre','code'],
+        throwOnError: false,
+        errorColor:   '#f87171',
+      });
+    } catch(_) {}
+  }
 
   const pct=Math.round(answeredCount/SOAL.length*100);
   document.getElementById('prog-bar').style.width=pct+'%';

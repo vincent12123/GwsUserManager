@@ -123,9 +123,9 @@ module.exports = function(app) {
   // PATCH /api/mcp/soal/:soalId — update 1 soal + review status
   app.patch('/api/mcp/soal/:soalId', (req, res) => {
     try {
-      const { soal, opsiA, opsiB, opsiC, opsiD, kunci, bobot, pembahasan, reviewStatus } = req.body;
+      const { soal, opsiA, opsiB, opsiC, opsiD, opsiE, kunci, bobot, pembahasan, reviewStatus } = req.body;
       mcpDb.updateSoal(parseInt(req.params.soalId), {
-        soal, opsiA, opsiB, opsiC, opsiD, kunci,
+        soal, opsiA, opsiB, opsiC, opsiD, opsiE, kunci,
         bobot: parseInt(bobot) || 1, pembahasan,
         reviewStatus: reviewStatus || 'pending',
       });

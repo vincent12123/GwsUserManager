@@ -7,6 +7,7 @@ const pkgDb  = require('../db/package');
 const { getClassroomClient, getAdminClient, handleError } = require('../helpers/auth');
 const { DOMAIN } = require('../config');
 const axios  = require('axios');
+const { fixLatexInSoal } = require('../tools/gen_soal');
 
 // Reuse getIPLocation dari security.js
 async function getIPLocation(ip) {
@@ -481,7 +482,7 @@ app.post('/api/cbt/sessions/:id/cheat-log', (req, res) => {
       if (!soal || !Array.isArray(soal) || soal.length === 0) {
         return res.status(400).json({ success: false, error: 'Array soal wajib diisi' });
       }
-      const count = cbtDb.importSoal(req.params.id, soal);
+      const count = cbtDb.importSoal(req.params.id, fixLatexInSoal(soal));
       res.json({ success: true, count, message: `${count} soal berhasil diimport` });
     } catch(err) { handleError(res, err); }
   });

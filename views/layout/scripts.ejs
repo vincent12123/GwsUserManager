@@ -121,6 +121,24 @@ async function submitChangePassword() {
 
 // Jalankan saat halaman load
 initAuth();
+// ── Render KaTeX Math — dipanggil setelah konten soal dirender ───────────────
+function renderMath(el) {
+  if (typeof renderMathInElement === 'undefined') return;
+  try {
+    renderMathInElement(el || document.body, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true  },
+        { left: '$',  right: '$',  display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true  },
+      ],
+      ignoredTags: ['script','noscript','style','textarea','pre','code'],
+      throwOnError: false,
+      errorColor:   '#f87171',
+    });
+  } catch(_) {}
+}
+
 </script>
 
 <!-- Mobile Sidebar CSS + JS -->

@@ -84,6 +84,7 @@ function renderBankList() {
     return;
   }
 
+  // Clear dulu
   tbody.innerHTML = _bankSoal.map(s => {
     const tingkatColor = { C1:'#60a5fa', C2:'#34d399', C3:'#a78bfa', C4:'#f0b429', C5:'#f87171', C6:'#f87171' };
     const preview = s.soal.length > 80 ? s.soal.slice(0, 80) + '…' : s.soal;
@@ -96,7 +97,7 @@ function renderBankList() {
         <div style="font-size:12.5px;font-weight:500;margin-bottom:3px">${esc(preview)}</div>
         ${s.tipe === 'PG' ? `<div style="font-size:11px;color:var(--muted)">
           A.${esc(s.opsi_a||'')} &nbsp; B.${esc(s.opsi_b||'')} &nbsp;
-          C.${esc(s.opsi_c||'')} &nbsp; D.${esc(s.opsi_d||'')}
+          C.${esc(s.opsi_c||'')} &nbsp; D.${esc(s.opsi_d||'')}${s.opsi_e?' &nbsp; E.'+esc(s.opsi_e):''}
           <span style="color:var(--green);font-weight:600;margin-left:6px">✓${esc(s.kunci||'')}</span>
         </div>` : `<div style="font-size:11px;color:var(--muted)">Essay — ${s.bobot} poin</div>`}
         ${tags ? `<div style="margin-top:3px">${tags}</div>` : ''}
@@ -117,6 +118,9 @@ function renderBankList() {
       </td>
     </tr>`;
   }).join('');
+
+  // Render KaTeX setelah DOM diupdate
+  setTimeout(()=>{ if(typeof renderMath==='function') renderMath(document.getElementById('bank-tbody')); }, 50);
 }
 
 function renderBankPagination() {
@@ -200,6 +204,7 @@ async function editBankSoal(id) {
     document.getElementById('bs-opsi-b').value  = s.opsi_b || '';
     document.getElementById('bs-opsi-c').value  = s.opsi_c || '';
     document.getElementById('bs-opsi-d').value  = s.opsi_d || '';
+    document.getElementById('bs-opsi-e').value  = s.opsi_e || '';
     document.getElementById('bs-kunci').value   = s.kunci  || '';
     document.getElementById('bs-bobot').value   = s.bobot  || 1;
     document.getElementById('bs-tags').value    = (s.tags||[]).join(', ');
@@ -238,7 +243,7 @@ function toggleBankOpsi(tipe) {
 
 function clearBankSoalForm() {
   ['bs-mapel','bs-kelas','bs-bab','bs-tingkat','bs-tipe','bs-soal',
-   'bs-opsi-a','bs-opsi-b','bs-opsi-c','bs-opsi-d','bs-kunci','bs-tags']
+   'bs-opsi-a','bs-opsi-b','bs-opsi-c','bs-opsi-d','bs-opsi-e','bs-kunci','bs-tags']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const bobot = document.getElementById('bs-bobot');
   if (bobot) bobot.value = 1;
@@ -269,6 +274,7 @@ async function saveBankSoal() {
     opsi_b:  document.getElementById('bs-opsi-b').value  || null,
     opsi_c:  document.getElementById('bs-opsi-c').value  || null,
     opsi_d:  document.getElementById('bs-opsi-d').value  || null,
+    opsi_e:  document.getElementById('bs-opsi-e')?.value || null,
     kunci:   document.getElementById('bs-kunci').value   || null,
     bobot:   parseInt(document.getElementById('bs-bobot').value) || 1,
     tags:    document.getElementById('bs-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
