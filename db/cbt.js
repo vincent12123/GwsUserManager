@@ -27,8 +27,10 @@ if (partCols.length > 0 && !partCols.includes('room_id')) {
   db.exec(`ALTER TABLE cbt_participants ADD COLUMN room_id INTEGER`);
 }
 
-// Migration cbt_soal — opsi_e
+// Migration cbt_soal — opsi_e + teks_bacaan
 try { db.exec(`ALTER TABLE cbt_soal ADD COLUMN opsi_e TEXT`); } catch(_) {}
+try { db.exec(`ALTER TABLE cbt_soal ADD COLUMN teks_bacaan TEXT`); } catch(_) {}
+try { db.exec(`ALTER TABLE cbt_soal ADD COLUMN teks_bacaan_id TEXT`); } catch(_) {}
 
 // ── TABEL SESI ────────────────────────────────────────────────────────────────
 db.exec(`
@@ -389,8 +391,8 @@ function importSoal(sessionId, soalArr) {
   db.prepare('DELETE FROM cbt_jawaban WHERE session_id = ?').run(sessionId);
 
   const ins = db.prepare(`
-    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, pembahasan)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, pembahasan, teks_bacaan, teks_bacaan_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   db.transaction(items => {
     for (const s of items) {
@@ -398,7 +400,8 @@ function importSoal(sessionId, soalArr) {
         sessionId, s.no, (s.tipe || 'PG').toUpperCase(),
         s.soal,
         s.opsi?.A || null, s.opsi?.B || null, s.opsi?.C || null, s.opsi?.D || null, s.opsi?.E || null,
-        s.kunci || null, s.bobot || 1, s.pembahasan || null
+        s.kunci || null, s.bobot || 1, s.pembahasan || null,
+        s.teks_bacaan || null, s.teks_bacaan_id || null
       );
     }
   })(soalArr);
@@ -407,8 +410,8 @@ function importSoal(sessionId, soalArr) {
 // Append soal tanpa hapus yang sudah ada (dipakai oleh Bank Soal → Sesi)
 function appendSoal(sessionId, soalArr) {
   const ins = db.prepare(`
-    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO cbt_soal (session_id, nomor, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, teks_bacaan, teks_bacaan_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   db.transaction(items => {
     for (const s of items) {
@@ -422,7 +425,8 @@ function appendSoal(sessionId, soalArr) {
         s.opsi?.C || s.opsi_c || null,
         s.opsi?.D || s.opsi_d || null,
         s.opsi?.E || s.opsi_e || null,
-        s.kunci || null, s.bobot || 1
+        s.kunci || null, s.bobot || 1,
+        s.teks_bacaan || null, s.teks_bacaan_id || null
       );
     }
   })(soalArr);
@@ -475,13 +479,15 @@ function getSoalShuffled(sessionId, userEmail) {
       ['A', 'B', 'C', 'D', 'E'].forEach((k, i) => { if (vals[i] !== undefined) opsi[k] = vals[i]; });
     }
     return {
-      id:           r.id,
-      nomor:        r.nomor,
-      displayNomor: displayIdx + 1,
-      tipe:         r.tipe,
-      soal:         r.soal,
-      bobot:        r.bobot,
+      id:             r.id,
+      nomor:          r.nomor,
+      displayNomor:   displayIdx + 1,
+      tipe:           r.tipe,
+      soal:           r.soal,
+      bobot:          r.bobot,
       opsi,
+      teks_bacaan:    r.teks_bacaan    || null,
+      teks_bacaan_id: r.teks_bacaan_id || null,
     };
   });
 }

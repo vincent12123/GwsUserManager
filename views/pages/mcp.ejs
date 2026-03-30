@@ -41,6 +41,36 @@
             <div><label class="field-label">Tahun Ajaran</label><input id="mcp-tahun" class="field-input" value="2025/2026"></div>
             <div><label class="field-label">Waktu</label><input id="mcp-waktu" class="field-input" value="90 menit"></div>
             <div style="grid-column:1/-1"><label class="field-label">Pembuat Soal</label><input id="mcp-pembuat" class="field-input" value="Sukardi, S.Kom"></div>
+            <!-- Toggle Soal Cerita / Teks Bacaan -->
+            <div style="grid-column:1/-1;padding:12px 14px;background:var(--accent-lt);border:1px solid rgba(26,110,250,.2);border-radius:8px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:0" id="teks-bacaan-header">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1">
+                  <input type="checkbox" id="mcp-with-teks-bacaan" style="width:15px;height:15px"
+                    onchange="toggleTeksBacaanOptions()">
+                  <span style="font-size:13px;font-weight:600;color:var(--accent-dk)">📖 Sertakan Teks Bacaan / Soal Cerita</span>
+                </label>
+                <span style="font-size:11px;color:var(--muted)">Untuk BI, B.Inggris, IPS, dll</span>
+              </div>
+              <div id="teks-bacaan-options" style="display:none;margin-top:10px;display:none;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label class="field-label">Jumlah Teks Bacaan</label>
+                  <select id="mcp-num-teks" class="field-input">
+                    <option value="1">1 teks</option>
+                    <option value="2">2 teks</option>
+                    <option value="3">3 teks</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">Soal per Teks Bacaan</label>
+                  <select id="mcp-soal-per-teks" class="field-input">
+                    <option value="2">2 soal</option>
+                    <option value="3" selected>3 soal</option>
+                    <option value="4">4 soal</option>
+                    <option value="5">5 soal</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

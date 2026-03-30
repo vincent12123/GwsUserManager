@@ -61,8 +61,8 @@ function extractPdf(filePath) {
   });
 }
 
-// Fungsi bersihkanTeks tidak diperlukan di sini lagi (ada di worker)
-// Dipertahankan untuk kompatibilitas jika diimport langsung
+// Fungsi bersihkanTeks dipertahankan di sini untuk kompatibilitas
+// jika module ini di-import langsung dari luar worker.
 function bersihkanTeks(teks) {
   return teks
     .replace(/\r\n/g, '\n')          // normalize line endings
@@ -72,4 +72,4 @@ function bersihkanTeks(teks) {
     .trim();
 }
 
-module.exports = { extractPdf }
+module.exports = { extractPdf };

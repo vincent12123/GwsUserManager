@@ -289,6 +289,36 @@ html, body { height: 100%; font-family: var(--sans); background: var(--bg); colo
   color: var(--text); font-weight: 400;
 }
 
+/* ── Teks Bacaan ── */
+.teks-bacaan-card {
+  margin: 0 0 8px;
+  background: rgba(45,212,191,.05);
+  border: 1px solid rgba(45,212,191,.2);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.teks-bacaan-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(45,212,191,.08);
+  cursor: pointer;
+  user-select: none;
+}
+.teks-bacaan-label {
+  font-size: 12px; font-weight: 700;
+  color: var(--teal); text-transform: uppercase; letter-spacing: .5px;
+}
+.teks-bacaan-toggle {
+  font-size: 11px; color: var(--teal); opacity: .7;
+}
+.teks-bacaan-body {
+  padding: 12px 16px;
+  font-size: 14px; line-height: 1.85;
+  color: var(--dim);
+  border-top: 1px solid rgba(45,212,191,.15);
+  white-space: pre-wrap;
+}
+
 /* ── Opsi PG ── */
 .opsi-list {
   padding: 0 14px 16px;
@@ -688,18 +718,6 @@ const MAX_CHEAT=3;
 const TIMER_CIRC=138.2; // 2π × 22
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-
-// Fix LaTeX commands corrupted oleh JSON escape sequences
-// \frac → \f (form feed) + rac, \theta → \t (tab) + heta, dll
-function fixLatex(s){
-  if(!s) return s;
-  return s
-    .replace(/\x08/g,'\\b')   // backspace  → \b (\beta, \binom)
-    .replace(/\x0C/g,'\\f')   // form feed  → \f (\frac, \forall)
-    .replace(/\x0D/g,'\\r')   // CR         → \r (\right, \rangle)
-    .replace(/\t/g,'\\t');     // tab        → \t (\theta, \text, \times)
-}
-
 function setScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function showOv(id){document.getElementById(id).classList.add('show');}
 function hideOv(id){document.getElementById(id).classList.remove('show');}
@@ -795,6 +813,24 @@ function onKeyGuard(e){
 /* ══════════════════════════════════════════════
    RENDER SOAL
 ══════════════════════════════════════════════ */
+function mdRenderSoal(txt) {
+  if (!txt) return '';
+  return esc(txt)
+    .replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;display:block;margin:6px 0">');
+}
+
+function toggleTeksBacaan(id) {
+  const el  = document.getElementById(id);
+  const tog = document.getElementById(id + '-toggle');
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display  = hidden ? 'block' : 'none';
+  if (tog) tog.textContent = hidden ? '▼ Lipat' : '▶ Buka';
+}
+
 function renderSoal(idx){
   const s=SOAL[idx];if(!s)return;
   const jaw=JAWABAN[s.nomor]||null;
@@ -804,16 +840,27 @@ function renderSoal(idx){
       ['A','B','C','D','E'].filter(k=>s.opsi[k]).map(k=>
         `<button class="opsi-btn${jaw===k?' selected':''}" onclick="pilih(${s.nomor},'${k}',this)">
           <span class="opsi-key">${k}</span>
-          <span class="opsi-text">${esc(fixLatex(s.opsi[k]))}</span>
+          <span class="opsi-text">${mdRenderSoal(s.opsi[k])}</span>
         </button>`
       ).join('')+'</div>';
   }else{
     body=`<div class="essay-wrap"><textarea class="essay-ta" id="ta-${s.nomor}" oninput="saveEssay(${s.nomor},this.value)" placeholder="Tulis jawaban Anda di sini...">${esc(jaw||'')}</textarea></div>`;
   }
-  // fixLatex: perbaiki backslash yang corrupt oleh JSON parse
-  let soalTxt=esc(fixLatex(s.soal))
-    .replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
-    .replace(/\n/g,'<br>');
+
+  // Teks bacaan
+  let teksBacaanHtml = '';
+  if (s.teks_bacaan) {
+    const tbId = 'tb-body-' + idx;
+    teksBacaanHtml = '<div class="teks-bacaan-card">' +
+      '<div class="teks-bacaan-head" onclick="toggleTeksBacaan(\''+tbId+'\')">' +
+      '<span class="teks-bacaan-label">📖 Teks Bacaan</span>' +
+      '<span class="teks-bacaan-toggle" id="'+tbId+'-toggle">▼ Lipat</span></div>' +
+      '<div class="teks-bacaan-body" id="'+tbId+'">' + esc(s.teks_bacaan) + '</div></div>';
+  }
+
+  const soalTxt = mdRenderSoal(s.soal);
+  const hasMath = (s.soal + (s.teks_bacaan||'')).includes('$') ||
+    (s.opsi && Object.values(s.opsi).some(v=>v&&v.includes('$')));
   const answeredCount=Object.keys(JAWABAN).length;
   const dots=SOAL.map((q,i)=>{
     const cls=i===idx?'current':JAWABAN[q.nomor]?'answered':'';
@@ -821,6 +868,7 @@ function renderSoal(idx){
   }).join('');
 
   document.getElementById('exam-body').innerHTML=`
+    ${teksBacaanHtml}
     <div class="soal-card">
       <div class="soal-badge">
         <span class="badge-no">Soal ${s.displayNomor||s.nomor}</span>
@@ -838,8 +886,16 @@ function renderSoal(idx){
       <div class="nav-grid">${dots}</div>
     </div>`;
 
-  // Render matematika dengan KaTeX setelah DOM diupdate
-  if (typeof renderMathInElement !== 'undefined') {
+  const pct=Math.round(answeredCount/SOAL.length*100);
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('btn-prev').disabled=idx===0;
+  const last=idx===SOAL.length-1;
+  document.getElementById('btn-next').style.display=last?'none':'flex';
+  document.getElementById('btn-sub').style.display=last?'flex':'none';
+  document.getElementById('exam-body').scrollTo(0,0);
+
+  // Render KaTeX setelah DOM diupdate
+  if (hasMath && typeof renderMathInElement !== 'undefined') {
     try {
       renderMathInElement(document.getElementById('exam-body'), {
         delimiters: [
@@ -848,20 +904,11 @@ function renderSoal(idx){
           { left: '\\(', right: '\\)', display: false },
           { left: '\\[', right: '\\]', display: true  },
         ],
-        ignoredTags: ['script','noscript','style','textarea','pre','code'],
         throwOnError: false,
-        errorColor:   '#f87171',
+        errorColor: '#f87171',
       });
     } catch(_) {}
   }
-
-  const pct=Math.round(answeredCount/SOAL.length*100);
-  document.getElementById('prog-bar').style.width=pct+'%';
-  document.getElementById('btn-prev').disabled=idx===0;
-  const last=idx===SOAL.length-1;
-  document.getElementById('btn-next').style.display=last?'none':'flex';
-  document.getElementById('btn-sub').style.display=last?'flex':'none';
-  document.getElementById('exam-body').scrollTo(0,0);
 }
 
 /* ══════════════════════════════════════════════

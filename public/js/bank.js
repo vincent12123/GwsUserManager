@@ -403,3 +403,94 @@ async function confirmHapusMapel() {
     btn.innerHTML = '🗑 Hapus Semua Soal';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MARKDOWN EDITOR — Bank Soal
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _mdMode = 'edit';
+
+function mdSetMode(mode) {
+  _mdMode = mode;
+  const ta      = document.getElementById('bs-soal');
+  const preview = document.getElementById('bs-soal-preview');
+  const toolbar = document.getElementById('md-toolbar');
+  const btnEdit = document.getElementById('btn-md-edit');
+  const btnPrev = document.getElementById('btn-md-preview');
+
+  if (mode === 'edit') {
+    ta?.style.setProperty('display','block');
+    if (preview) preview.style.display = 'none';
+    if (toolbar) toolbar.style.display = 'flex';
+    if (btnEdit) { btnEdit.style.borderColor='var(--blue)'; btnEdit.style.color='var(--blue)'; }
+    if (btnPrev) { btnPrev.style.borderColor=''; btnPrev.style.color=''; }
+  } else {
+    mdUpdatePreview();
+    ta?.style.setProperty('display','none');
+    if (preview) preview.style.display = 'block';
+    if (toolbar) toolbar.style.display = 'none';
+    if (btnPrev) { btnPrev.style.borderColor='var(--blue)'; btnPrev.style.color='var(--blue)'; }
+    if (btnEdit) { btnEdit.style.borderColor=''; btnEdit.style.color=''; }
+  }
+}
+
+function mdUpdatePreview() {
+  const ta      = document.getElementById('bs-soal');
+  const preview = document.getElementById('bs-soal-preview');
+  if (!ta || !preview) return;
+  if (_mdMode !== 'preview') return;
+
+  // Simple markdown → HTML (bold, italic, gambar, newline)
+  let html = esc(ta.value)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+      '<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;margin:4px 0">')
+    .replace(/\n/g, '<br>');
+
+  preview.innerHTML = html;
+
+  // Render KaTeX
+  if (typeof renderMathInElement !== 'undefined') {
+    try {
+      renderMathInElement(preview, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true  },
+          { left: '$',  right: '$',  display: false },
+        ],
+        throwOnError: false,
+      });
+    } catch(_) {}
+  }
+}
+
+function mdInsert(before, after) {
+  const ta = document.getElementById('bs-soal');
+  if (!ta) return;
+  ta.focus();
+  const start = ta.selectionStart;
+  const end   = ta.selectionEnd;
+  const sel   = ta.value.substring(start, end) || 'teks';
+  const newVal = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
+  ta.value = newVal;
+  ta.selectionStart = start + before.length;
+  ta.selectionEnd   = start + before.length + sel.length;
+  mdUpdatePreview();
+}
+
+async function mdUploadImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('image', file);
+  try {
+    const r = await fetch('/api/bank/upload-image', { method: 'POST', body: formData });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error);
+    mdInsert(`![${file.name}](${j.url})`, '');
+    toast('Gambar berhasil diupload', 'success');
+  } catch(e) {
+    toast('Upload gagal: ' + e.message, 'error');
+  }
+  input.value = '';
+}

@@ -26,6 +26,9 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Static files dulu — sebelum auth, supaya manifest.json, sw.js, css, js bisa diakses tanpa login
+// Buat folder upload soal jika belum ada
+const uploadDir = path.join(__dirname, 'public', 'uploads', 'soal');
+if (!require('fs').existsSync(uploadDir)) require('fs').mkdirSync(uploadDir, { recursive: true });
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Auth middleware — untuk halaman dan API yang butuh login

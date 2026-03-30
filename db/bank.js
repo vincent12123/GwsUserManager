@@ -53,17 +53,20 @@ db.exec(`
 
 // ── MIGRATION: tambah opsi_e jika tabel sudah ada sebelumnya ─────────────────
 try { db.exec(`ALTER TABLE bank_soal ADD COLUMN opsi_e TEXT`); } catch(_) {}
+try { db.exec(`ALTER TABLE bank_soal ADD COLUMN teks_bacaan TEXT`); } catch(_) {}
+try { db.exec(`ALTER TABLE bank_soal ADD COLUMN teks_bacaan_id TEXT`); } catch(_) {}
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
-function createSoal({ mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, sumber, tags }) {
+function createSoal({ mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, sumber, teks_bacaan, teks_bacaan_id, tags }) {
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO bank_soal (id, mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, sumber)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO bank_soal (id, mapel, kelas, bab, tingkat, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, sumber, teks_bacaan, teks_bacaan_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(id, mapel, kelas || 'Semua', bab || null, tingkat || 'C2', tipe || 'PG',
       soal, opsi_a || null, opsi_b || null, opsi_c || null, opsi_d || null, opsi_e || null,
-      kunci || null, bobot || 1, sumber || 'Manual');
+      kunci || null, bobot || 1, sumber || 'Manual',
+      teks_bacaan || null, teks_bacaan_id || null);
   if (tags?.length) setTags(id, tags);
   return getSoalById(id);
 }
@@ -104,7 +107,7 @@ function getAllSoal({ mapel, kelas, bab, tingkat, tipe, search, limit = 100, off
 }
 
 function updateSoal(id, fields) {
-  const allowed = ['mapel','kelas','bab','tingkat','tipe','soal','opsi_a','opsi_b','opsi_c','opsi_d','opsi_e','kunci','bobot','sumber'];
+  const allowed = ['mapel','kelas','bab','tingkat','tipe','soal','opsi_a','opsi_b','opsi_c','opsi_d','opsi_e','kunci','bobot','sumber','teks_bacaan','teks_bacaan_id'];
   const sets    = Object.keys(fields).filter(k => allowed.includes(k)).map(k => `${k} = ?`);
   if (!sets.length) return getSoalById(id);
   sets.push(`updated_at = datetime('now','localtime')`);

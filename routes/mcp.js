@@ -1,8 +1,6 @@
 /**
  * routes/mcp.js - MCP Generator Soal terintegrasi GWS Manager
- * Soal disimpan ke DB setelah generate, review state persist.
  */
-
 const path = require('path');
 const fs   = require('fs');
 
@@ -13,6 +11,11 @@ const UPLOAD_DIR = process.env.MCP_UPLOAD_DIR || './mcp_uploads';
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
 
+// ── Require DB di luar function agar selalu tersedia ──────────────────────────
+const mcpDb = require('../db/mcp');
+const cbtDb = require('../db/cbt');
+const _cfg  = require('../config');
+
 module.exports = function(app) {
 
   let multer, archiver;
@@ -21,16 +24,13 @@ module.exports = function(app) {
     archiver = require('archiver');
   } catch(e) {
     console.error('  ✗ routes/mcp.js: dependency hilang —', e.message);
-    console.error('  → Jalankan: npm install multer archiver ollama docx pdf-parse');
     app.all('/api/mcp/*', (req, res) =>
-      res.status(503).json({ success: false, error: 'MCP belum siap. Jalankan: npm install multer archiver ollama docx pdf-parse' })
+      res.status(503).json({ success: false, error: 'MCP belum siap. Jalankan: npm install multer archiver' })
     );
     return;
   }
 
   const express = require('express');
-  const mcpDb   = require('../db/mcp');
-  const cbtDb   = require('../db/cbt');
 
   app.use('/api/mcp/download', express.static(OUTPUT_DIR));
 
@@ -97,8 +97,12 @@ module.exports = function(app) {
     const {
       teks_materi, mapel = 'Pemrograman', kelas = 'XI RPL',
       num_pg = 5, num_es = 3, level = 'sedang',
-      nama_sekolah = 'SMK Karya Bangsa', semester = 'Ganjil',
+      nama_sekolah, semester = 'Ganjil',
       tahun_ajaran = '2025/2026', waktu = '90 menit', pembuat = 'Guru',
+      // Teks bacaan (soal cerita)
+      with_teks_bacaan = false,
+      num_teks = 1,
+      soal_per_teks = 3,
     } = req.body;
 
     if (!teks_materi || teks_materi.trim().length < 50)
@@ -107,16 +111,26 @@ module.exports = function(app) {
     try {
       const { genSoal } = require('../tools/gen_soal');
       const dataSoal = await genSoal(teks_materi, {
-        mapel, kelas, numPG: parseInt(num_pg), numES: parseInt(num_es), level,
+        mapel, kelas,
+        numPG:           parseInt(num_pg),
+        numES:           parseInt(num_es),
+        level,
+        withTeksBacaan:  Boolean(with_teks_bacaan),
+        numTeks:         parseInt(num_teks)    || 1,
+        soalPerTeks:     parseInt(soal_per_teks) || 3,
       });
       if (!dataSoal?.soal?.length) throw new Error('Ollama tidak menghasilkan soal');
 
-      const config = { level, numPG: parseInt(num_pg), numES: parseInt(num_es),
-        namaSekolah: nama_sekolah, semester, tahunAjaran: tahun_ajaran, waktu, pembuat };
+      const namaSekolah = nama_sekolah || _cfg.SCHOOL_SHORT_NAME || 'Sekolah';
+      const config = {
+        level, numPG: parseInt(num_pg), numES: parseInt(num_es),
+        namaSekolah, semester, tahunAjaran: tahun_ajaran, waktu, pembuat,
+        withTeksBacaan: Boolean(with_teks_bacaan),
+      };
       const pkg  = mcpDb.createPackage({ mapel, kelas, config, soalArr: dataSoal.soal });
       const soal = mcpDb.getSoalByPackage(pkg.id);
-      console.log(`[MCP] Package ${pkg.id} tersimpan — ${soal.length} soal`);
-      res.json({ success: true, data: { ...pkg, soal } });
+      console.log(`[MCP] Package ${pkg.id} — ${soal.length} soal, teks_bacaan: ${dataSoal.teks_bacaan?.length || 0}`);
+      res.json({ success: true, data: { ...pkg, soal, teks_bacaan: dataSoal.teks_bacaan || [] } });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
   });
 
@@ -149,11 +163,9 @@ module.exports = function(app) {
     try {
       const pkg = mcpDb.getPackage(req.params.id);
       if (!pkg) return res.status(404).json({ success: false, error: 'Paket tidak ditemukan' });
-
       const approvedSoal = mcpDb.getApprovedSoal(req.params.id);
       if (!approvedSoal.length)
         return res.status(400).json({ success: false, error: 'Tidak ada soal yang disetujui' });
-
       approvedSoal.forEach((s, i) => { s.no = i + 1; });
       const cfg = pkg.config || {};
       const dataSoal = {
@@ -167,19 +179,17 @@ module.exports = function(app) {
         soal: approvedSoal,
       };
       const pengaturan = {
-        namaSekolah: cfg.namaSekolah || 'SMK Karya Bangsa',
+        namaSekolah: cfg.namaSekolah || _cfg.SCHOOL_SHORT_NAME || 'Sekolah',
         semester:    cfg.semester    || 'Ganjil',
         tahunAjaran: cfg.tahunAjaran || '2025/2026',
         waktu:       cfg.waktu       || '90 menit',
         pembuat:     cfg.pembuat     || 'Guru',
       };
-
       const { exportDocx, exportKunci } = require('../tools/export_docx');
       const [soalResult, kunciResult] = await Promise.all([
         exportDocx(dataSoal, pengaturan, OUTPUT_DIR),
         exportKunci(dataSoal, pengaturan, OUTPUT_DIR),
       ]);
-
       const ts = Date.now();
       const safeName  = pkg.mapel.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20);
       const safeKelas = pkg.kelas.replace(/\s+/g, '');
@@ -189,7 +199,6 @@ module.exports = function(app) {
         meta: { ...dataSoal.meta, ...pengaturan, exported_at: new Date().toISOString() },
         soal: dataSoal.soal,
       }, null, 2));
-
       const zipFilename = `soal_${safeName}_${safeKelas}_${ts}.zip`;
       const zipPath     = path.join(OUTPUT_DIR, zipFilename);
       await new Promise((resolve, reject) => {
@@ -202,7 +211,6 @@ module.exports = function(app) {
         archive.file(jsonPath, { name: jsonFilename });
         archive.finalize();
       });
-
       mcpDb.updatePackageStatus(req.params.id, 'reviewed');
       const host = `${req.protocol}://${req.get('host')}`;
       res.json({
@@ -222,20 +230,35 @@ module.exports = function(app) {
     try {
       const { session_id } = req.body;
       if (!session_id) return res.status(400).json({ success: false, error: 'session_id wajib diisi' });
-
       const sesi = cbtDb.getSession(session_id);
-      if (!sesi) return res.status(404).json({ success: false, error: `Sesi tidak ditemukan` });
-
+      if (!sesi) return res.status(404).json({ success: false, error: 'Sesi tidak ditemukan' });
       const approvedSoal = mcpDb.getApprovedSoal(req.params.id);
       if (!approvedSoal.length)
         return res.status(400).json({ success: false, error: 'Tidak ada soal yang disetujui' });
-
       approvedSoal.forEach((s, i) => { s.no = i + 1; });
       const jumlah = cbtDb.importSoal(session_id, approvedSoal);
       mcpDb.updatePackageStatus(req.params.id, 'imported');
-
       res.json({ success: true, message: `${jumlah} soal diimport ke sesi "${sesi.name}"`, inserted: jumlah });
     } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+  });
+
+  // POST /api/bank/upload-image — upload gambar untuk soal (Markdown)
+  app.post('/api/bank/upload-image', (req, res, next) => {
+    const imgUpload = multer({
+      dest: './public/uploads/soal/',
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        /^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)
+          ? cb(null, true)
+          : cb(new Error('Hanya file gambar (jpg/png/gif/webp)'));
+      },
+    });
+    imgUpload.single('image')(req, res, err => {
+      if (err) return res.status(400).json({ success: false, error: err.message });
+      if (!req.file) return res.status(400).json({ success: false, error: 'File gambar wajib diupload' });
+      const url = `/uploads/soal/${req.file.filename}`;
+      res.json({ success: true, url, filename: req.file.filename });
+    });
   });
 
 };

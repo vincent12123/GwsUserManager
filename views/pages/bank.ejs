@@ -117,10 +117,44 @@
               <input id="bs-bobot" class="field-input" type="number" min="1" value="1" style="max-width:80px">
             </div>
           </div>
-          <!-- Soal -->
+          <!-- Soal dengan Markdown Editor -->
           <div>
-            <label class="field-label">Soal *</label>
-            <textarea id="bs-soal" class="field-input" rows="3" placeholder="Tulis soal di sini..." style="resize:vertical"></textarea>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <label class="field-label" style="margin:0">Soal *</label>
+              <div style="display:flex;gap:4px">
+                <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px"
+                  id="btn-md-edit" onclick="mdSetMode('edit')" title="Mode Edit">✏️ Edit</button>
+                <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px"
+                  id="btn-md-preview" onclick="mdSetMode('preview')" title="Mode Preview">👁 Preview</button>
+              </div>
+            </div>
+            <!-- Toolbar -->
+            <div id="md-toolbar" style="display:flex;gap:4px;flex-wrap:wrap;padding:6px 8px;
+              background:var(--surface2);border:1px solid var(--border);border-radius:6px 6px 0 0;border-bottom:none">
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px;font-weight:700" onclick="mdInsert('**','**')" title="Bold">B</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:12px;font-style:italic" onclick="mdInsert('*','*')" title="Italic">I</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="mdInsert('$','$')" title="Math inline">∑</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="mdInsert('\n$$\n','\n$$\n')" title="Math block">∑²</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="mdInsert('$x^{}','$')" title="Pangkat">xⁿ</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="mdInsert('$\\\\frac{','}{}$')" title="Pecahan">a/b</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="mdInsert('$\\\\sqrt{','}$')" title="Akar">√</button>
+              <button type="button" class="btn btn-ghost" style="padding:2px 8px;font-size:11px" onclick="mdInsert('$^','\\\\log $')" title="Logaritma">log</button>
+              <span style="width:1px;background:var(--border);margin:0 2px"></span>
+              <label class="btn btn-ghost" style="padding:2px 8px;font-size:11px;cursor:pointer" title="Upload Gambar">
+                🖼
+                <input type="file" accept="image/*" style="display:none" onchange="mdUploadImage(this)">
+              </label>
+            </div>
+            <!-- Textarea -->
+            <textarea id="bs-soal" class="field-input" rows="4"
+              placeholder="Tulis soal di sini... Gunakan $...$ untuk matematika, ![alt](url) untuk gambar"
+              style="resize:vertical;border-radius:0 0 6px 6px;font-family:var(--mono);font-size:12px"
+              oninput="mdUpdatePreview()"></textarea>
+            <!-- Preview -->
+            <div id="bs-soal-preview" style="display:none;padding:10px 12px;
+              background:var(--surface2);border:1px solid var(--border);
+              border-radius:0 0 6px 6px;min-height:60px;font-size:13px;line-height:1.7">
+            </div>
           </div>
           <!-- Opsi PG -->
           <div id="bs-opsi-group">

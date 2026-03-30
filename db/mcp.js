@@ -2,12 +2,12 @@
 // DB: MCP — Paket Soal Generated oleh Ollama
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const Database = require('better-sqlite3');
-const path     = require('path');
 const { randomUUID } = require('crypto');
 
-const db = new Database(path.join(__dirname, '..', 'cbt.db'));
-db.pragma('journal_mode = WAL');
+// ── Gunakan koneksi db yang SAMA dengan cbt.js ────────────────────────────────
+// Mencegah race condition saat startup (multiple SQLite connections ke cbt.db)
+const cbtModule = require('./cbt');
+const db = cbtModule._db;
 
 // ── TABEL MCP PACKAGES ────────────────────────────────────────────────────────
 db.exec(`
@@ -36,6 +36,8 @@ db.exec(`
     opsi_c         TEXT,
     opsi_d         TEXT,
     opsi_e         TEXT,
+    teks_bacaan    TEXT,
+    teks_bacaan_id TEXT,
     kunci          TEXT,
     bobot          INTEGER DEFAULT 1,
     pembahasan     TEXT,
@@ -46,6 +48,8 @@ db.exec(`
 
 // ── MIGRATION: tambah opsi_e jika tabel sudah ada sebelumnya ─────────────────
 try { db.exec(`ALTER TABLE mcp_soal ADD COLUMN opsi_e TEXT`); } catch(_) {}
+try { db.exec(`ALTER TABLE mcp_soal ADD COLUMN teks_bacaan TEXT`); } catch(_) {}
+try { db.exec(`ALTER TABLE mcp_soal ADD COLUMN teks_bacaan_id TEXT`); } catch(_) {}
 
 // ── PACKAGES ──────────────────────────────────────────────────────────────────
 
@@ -62,8 +66,8 @@ function createPackage({ mapel, kelas, config, soalArr }) {
 
   // Insert semua soal sekaligus dalam satu transaksi
   const ins = db.prepare(`
-    INSERT INTO mcp_soal (package_id, no, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, pembahasan)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO mcp_soal (package_id, no, tipe, soal, opsi_a, opsi_b, opsi_c, opsi_d, opsi_e, kunci, bobot, pembahasan, teks_bacaan, teks_bacaan_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   db.transaction(items => {
     for (const s of items) {
@@ -73,7 +77,9 @@ function createPackage({ mapel, kelas, config, soalArr }) {
         s.opsi?.A || null, s.opsi?.B || null, s.opsi?.C || null, s.opsi?.D || null, s.opsi?.E || null,
         s.kunci || null,
         s.bobot || 1,
-        s.pembahasan || null
+        s.pembahasan || null,
+        s.teks_bacaan || null,
+        s.teks_bacaan_id || null
       );
     }
   })(soalArr);
@@ -122,16 +128,17 @@ function getApprovedSoal(packageId) {
 }
 
 function updateSoal(id, fields) {
-  const { soal, opsiA, opsiB, opsiC, opsiD, opsiE, kunci, bobot, pembahasan, reviewStatus } = fields;
+  const { soal, opsiA, opsiB, opsiC, opsiD, opsiE, kunci, bobot, pembahasan, reviewStatus, teks_bacaan } = fields;
   db.prepare(`
     UPDATE mcp_soal SET
       soal = ?, opsi_a = ?, opsi_b = ?, opsi_c = ?, opsi_d = ?, opsi_e = ?,
-      kunci = ?, bobot = ?, pembahasan = ?, review_status = ?
+      kunci = ?, bobot = ?, pembahasan = ?, review_status = ?, teks_bacaan = ?
     WHERE id = ?
   `).run(
     soal,
     opsiA || null, opsiB || null, opsiC || null, opsiD || null, opsiE || null,
     kunci || null, bobot || 1, pembahasan || null, reviewStatus || 'pending',
+    teks_bacaan ?? null,
     id
   );
   // Update timestamp package
@@ -165,7 +172,9 @@ function soalToObj(row) {
     kunci:        row.kunci,
     bobot:        row.bobot,
     pembahasan:   row.pembahasan,
-    reviewStatus: row.review_status,
+    teks_bacaan:    row.teks_bacaan || null,
+    teks_bacaan_id: row.teks_bacaan_id || null,
+    reviewStatus:   row.review_status,
   };
 }
 

@@ -10,6 +10,14 @@ let _mcp = {
   activeIdx:       null,
 };
 
+// ── Toggle Teks Bacaan Options ────────────────────────────────────────────────
+function toggleTeksBacaanOptions() {
+  const checked = document.getElementById('mcp-with-teks-bacaan')?.checked;
+  const opts    = document.getElementById('teks-bacaan-options');
+  if (!opts) return;
+  opts.style.display = checked ? 'grid' : 'none';
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function initMCP() {
   await checkOllamaStatus();
@@ -180,11 +188,15 @@ async function mcpStartGenerate() {
         num_pg: parseInt(document.getElementById('mcp-num-pg')?.value || 5),
         num_es: parseInt(document.getElementById('mcp-num-es')?.value || 3),
         level:  document.getElementById('mcp-level')?.value || 'sedang',
-        nama_sekolah: document.getElementById('mcp-nama-sekolah')?.value || 'SMK Karya Bangsa',
+        nama_sekolah: document.getElementById('mcp-nama-sekolah')?.value || '',
         semester:     document.getElementById('mcp-semester')?.value || 'Ganjil',
         tahun_ajaran: document.getElementById('mcp-tahun')?.value || '2025/2026',
         waktu:        document.getElementById('mcp-waktu')?.value || '90 menit',
         pembuat:      document.getElementById('mcp-pembuat')?.value || 'Guru',
+        // Teks bacaan / soal cerita
+        with_teks_bacaan: document.getElementById('mcp-with-teks-bacaan')?.checked || false,
+        num_teks:         parseInt(document.getElementById('mcp-num-teks')?.value || 1),
+        soal_per_teks:    parseInt(document.getElementById('mcp-soal-per-teks')?.value || 3),
       }),
     });
     const j = await r.json();
@@ -255,6 +267,26 @@ function mcpOpenSoal(idx) {
   if (!el || !s) return;
 
   const isPG = s.tipe === 'PG';
+
+  // Teks bacaan — tampilkan jika ada
+  const teksBacaanHtml = s.teks_bacaan ? `
+    <div style="margin-bottom:14px;border:1px solid rgba(45,212,191,.25);border-radius:8px;overflow:hidden">
+      <div style="background:rgba(45,212,191,.08);padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.5px">📖 Teks Bacaan</span>
+        <span style="font-size:11px;color:var(--muted)">${s.teks_bacaan_id || ''}</span>
+      </div>
+      <div style="padding:12px 14px">
+        <textarea id="ed-teks-bacaan" rows="6"
+          style="width:100%;background:transparent;border:none;color:var(--dim);font-size:13px;line-height:1.75;resize:vertical;outline:none;font-family:var(--sans)"
+          placeholder="Teks bacaan untuk soal ini...">${esc(s.teks_bacaan)}</textarea>
+      </div>
+    </div>` : `
+    <div style="margin-bottom:10px">
+      <button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="mcpAddTeksBacaan(${idx})">
+        + Tambah Teks Bacaan
+      </button>
+    </div>`;
+
   el.innerHTML = `
     <div class="mcp-editor-header">
       <span class="mcp-soal-badge">Soal ${s.no}</span>
@@ -266,6 +298,8 @@ function mcpOpenSoal(idx) {
       </span>
     </div>
 
+    ${teksBacaanHtml}
+
     <div style="margin-bottom:12px">
       <label class="field-label">Pertanyaan</label>
       <textarea id="ed-soal" rows="4" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:10px;font-size:13px;resize:vertical">${esc(s.soal)}</textarea>
@@ -273,12 +307,13 @@ function mcpOpenSoal(idx) {
 
     ${isPG ? `
     <div style="margin-bottom:12px">
-      <label class="field-label">Pilihan Jawaban</label>
+      <label class="field-label">Pilihan Jawaban (A–E)</label>
       ${['A','B','C','D','E'].map(h => `
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="width:22px;height:22px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">${h}</span>
           <input id="ed-opsi-${h}" type="text" value="${esc(s.opsi?.[h]||'')}"
-            style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 10px;font-size:12px">
+            style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:6px 10px;font-size:12px"
+            placeholder="${h === 'E' ? 'Opsional' : ''}">
           <label style="font-size:11px;color:var(--muted);white-space:nowrap">
             <input type="radio" name="ed-kunci" value="${h}" ${s.kunci===h?'checked':''}> Kunci
           </label>
@@ -305,15 +340,27 @@ function mcpOpenSoal(idx) {
   mcpRenderSidebar();
 }
 
+// Tambah teks bacaan manual ke soal yang belum punya
+function mcpAddTeksBacaan(idx) {
+  const s = _mcp.soalList[idx];
+  if (!s) return;
+  s.teks_bacaan    = '';
+  s.teks_bacaan_id = 'teks-1';
+  mcpOpenSoal(idx);
+  setTimeout(() => document.getElementById('ed-teks-bacaan')?.focus(), 100);
+}
+
 // Kumpulkan nilai dari form editor
 function mcpReadEditor(s) {
-  const soal = document.getElementById('ed-soal')?.value || s.soal;
-  const bobot = parseInt(document.getElementById('ed-bobot')?.value || s.bobot);
+  const soal       = document.getElementById('ed-soal')?.value || s.soal;
+  const bobot      = parseInt(document.getElementById('ed-bobot')?.value || s.bobot);
   const pembahasan = document.getElementById('ed-pembahasan')?.value || s.pembahasan || '';
+  const teksBacaan = document.getElementById('ed-teks-bacaan')?.value ?? s.teks_bacaan ?? null;
   if (s.tipe === 'PG') {
     const kunciEl = document.querySelector('input[name="ed-kunci"]:checked');
     return {
       soal, bobot, pembahasan,
+      teks_bacaan: teksBacaan,
       opsiA: document.getElementById('ed-opsi-A')?.value || '',
       opsiB: document.getElementById('ed-opsi-B')?.value || '',
       opsiC: document.getElementById('ed-opsi-C')?.value || '',
@@ -322,7 +369,7 @@ function mcpReadEditor(s) {
       kunci: kunciEl?.value || s.kunci || '',
     };
   }
-  return { soal, bobot, pembahasan, kunci: document.getElementById('ed-kunci-es')?.value || s.kunci || '' };
+  return { soal, bobot, pembahasan, teks_bacaan: teksBacaan, kunci: document.getElementById('ed-kunci-es')?.value || s.kunci || '' };
 }
 
 // Simpan edit ke DB tanpa ubah status
@@ -337,9 +384,8 @@ async function mcpSaveSoal(idx) {
     });
     // Update state lokal
     Object.assign(s, fields, {
-      opsi: s.tipe === 'PG'
-        ? { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD, E: fields.opsiE }
-        : undefined,
+      opsi: s.tipe === 'PG' ? { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD, E: fields.opsiE } : undefined,
+      teks_bacaan: fields.teks_bacaan,
     });
     toast('Soal disimpan', 'success');
   } catch(e) { toast('Gagal simpan: ' + e.message, 'error'); }
@@ -356,9 +402,13 @@ async function mcpSaveAndSetStatus(idx, status) {
       body: JSON.stringify(fields),
     });
     // Update state lokal
-    s.reviewStatus = status;
+    s.reviewStatus  = status;
+    s.soal          = fields.soal;
+    s.bobot         = fields.bobot;
+    s.pembahasan    = fields.pembahasan;
+    s.kunci         = fields.kunci;
+    s.teks_bacaan   = fields.teks_bacaan;
     if (s.tipe === 'PG') s.opsi = { A: fields.opsiA, B: fields.opsiB, C: fields.opsiC, D: fields.opsiD, E: fields.opsiE };
-    s.soal = fields.soal; s.bobot = fields.bobot; s.pembahasan = fields.pembahasan; s.kunci = fields.kunci;
 
     mcpRenderSidebar();
     mcpUpdateProgress();
@@ -508,7 +558,6 @@ async function mcpSimpanKeBank() {
           opsi_b: s.opsi_b || s.b || (s.opsi?.B) || null,
           opsi_c: s.opsi_c || s.c || (s.opsi?.C) || null,
           opsi_d: s.opsi_d || s.d || (s.opsi?.D) || null,
-          opsi_e: s.opsi_e || s.e || (s.opsi?.E) || null,
           kunci:  s.kunci  || s.jawaban || null,
           bobot:  s.bobot  || s.poin || 1,
         })),
