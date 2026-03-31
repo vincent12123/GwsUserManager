@@ -33,6 +33,7 @@ mcp_uploads/
 mcp_outputs/
 audit_outputs/
 public/icons/*.png
+public/uploads
 
 # ── Log Files ─────────────────────────────────────────────────────────────────
 logs/

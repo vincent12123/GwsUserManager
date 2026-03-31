@@ -144,12 +144,14 @@ module.exports = function(app) {
       const existing  = cbtDb.getSoal(sessionId, false);
       let   nextNomor = existing.length + 1;
       const formatted = soalList.map(s => ({
-        no:   nextNomor++,
-        tipe: s.tipe,
-        soal: s.soal,
-        opsi: { A: s.opsi_a||null, B: s.opsi_b||null, C: s.opsi_c||null, D: s.opsi_d||null, E: s.opsi_e||null },
-        kunci: s.kunci,
-        bobot: s.bobot || 1,
+        no:             nextNomor++,
+        tipe:           s.tipe,
+        soal:           s.soal,
+        opsi:           { A: s.opsi_a||null, B: s.opsi_b||null, C: s.opsi_c||null, D: s.opsi_d||null, E: s.opsi_e||null },
+        kunci:          s.kunci,
+        bobot:          s.bobot || 1,
+        teks_bacaan:    s.teks_bacaan    || null,
+        teks_bacaan_id: s.teks_bacaan_id || null,
       }));
       cbtDb.appendSoal(sessionId, fixLatexInSoal(formatted));
       bankDb.recordBulkUsage(soalIds, sessionId);

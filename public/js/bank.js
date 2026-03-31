@@ -94,7 +94,10 @@ function renderBankList() {
 
     return `<tr>
       <td style="max-width:320px">
-        <div style="font-size:12.5px;font-weight:500;margin-bottom:3px">${esc(preview)}</div>
+        <div style="font-size:12.5px;font-weight:500;margin-bottom:3px">
+          ${s.teks_bacaan ? '<span style="font-size:10px;background:rgba(45,212,191,.15);color:var(--teal);border-radius:3px;padding:1px 5px;margin-right:5px">📖 Teks Bacaan</span>' : ''}${esc(preview)}
+        </div>
+        ${s.teks_bacaan ? `<div style="font-size:11px;color:var(--teal);margin-bottom:2px;font-style:italic">${esc(s.teks_bacaan.slice(0,60))}…</div>` : ''}
         ${s.tipe === 'PG' ? `<div style="font-size:11px;color:var(--muted)">
           A.${esc(s.opsi_a||'')} &nbsp; B.${esc(s.opsi_b||'')} &nbsp;
           C.${esc(s.opsi_c||'')} &nbsp; D.${esc(s.opsi_d||'')}${s.opsi_e?' &nbsp; E.'+esc(s.opsi_e):''}
@@ -208,6 +211,16 @@ async function editBankSoal(id) {
     document.getElementById('bs-kunci').value   = s.kunci  || '';
     document.getElementById('bs-bobot').value   = s.bobot  || 1;
     document.getElementById('bs-tags').value    = (s.tags||[]).join(', ');
+    // Teks bacaan
+    const tbEl = document.getElementById('bs-teks-bacaan');
+    if (tbEl) tbEl.value = s.teks_bacaan || '';
+    const tbIdEl = document.getElementById('bs-teks-bacaan-id');
+    if (tbIdEl) tbIdEl.value = s.teks_bacaan_id || '';
+    // Toggle tampilan teks bacaan
+    const tbGroup = document.getElementById('bs-teks-bacaan-group');
+    if (tbGroup) tbGroup.style.display = s.teks_bacaan ? 'block' : 'none';
+    const tbCheck = document.getElementById('bs-with-teks-bacaan');
+    if (tbCheck) tbCheck.checked = !!s.teks_bacaan;
     toggleBankOpsi(s.tipe);
     document.getElementById('modal-bank-soal').classList.add('open');
   } catch(e) { toast('Gagal memuat soal', 'error'); }
@@ -243,7 +256,7 @@ function toggleBankOpsi(tipe) {
 
 function clearBankSoalForm() {
   ['bs-mapel','bs-kelas','bs-bab','bs-tingkat','bs-tipe','bs-soal',
-   'bs-opsi-a','bs-opsi-b','bs-opsi-c','bs-opsi-d','bs-opsi-e','bs-kunci','bs-tags']
+   'bs-opsi-a','bs-opsi-b','bs-opsi-c','bs-opsi-d','bs-opsi-e','bs-kunci','bs-tags','bs-teks-bacaan','bs-teks-bacaan-id']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   const bobot = document.getElementById('bs-bobot');
   if (bobot) bobot.value = 1;
@@ -273,8 +286,10 @@ async function saveBankSoal() {
     opsi_a:  document.getElementById('bs-opsi-a').value  || null,
     opsi_b:  document.getElementById('bs-opsi-b').value  || null,
     opsi_c:  document.getElementById('bs-opsi-c').value  || null,
-    opsi_d:  document.getElementById('bs-opsi-d').value  || null,
-    opsi_e:  document.getElementById('bs-opsi-e')?.value || null,
+    opsi_d:       document.getElementById('bs-opsi-d').value  || null,
+    opsi_e:       document.getElementById('bs-opsi-e')?.value || null,
+    teks_bacaan:  document.getElementById('bs-teks-bacaan')?.value?.trim() || null,
+    teks_bacaan_id: document.getElementById('bs-teks-bacaan-id')?.value?.trim() || null,
     kunci:   document.getElementById('bs-kunci').value   || null,
     bobot:   parseInt(document.getElementById('bs-bobot').value) || 1,
     tags:    document.getElementById('bs-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
