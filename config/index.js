@@ -25,6 +25,9 @@ module.exports = {
   DEFAULT_STUDENT_OU: process.env.DEFAULT_STUDENT_OU || "/Karya Bangsa School/SMK-Karya-Bangsa/Siswa",
   DEFAULT_STAFF_OU:   process.env.DEFAULT_STAFF_OU   || "/Karya Bangsa School/SMK-Karya-Bangsa/TU",
 
+  // Group email guru — untuk share Google Sheets hasil ujian
+  TEACHER_GROUP: process.env.TEACHER_GROUP || ('classroom_teachers@' + (process.env.SCHOOL_DOMAIN || 'karyabangsa.sch.id')),
+
   // Informasi tambahan
   VERSION: "2.1",
   APP_NAME: "GWS Manager"

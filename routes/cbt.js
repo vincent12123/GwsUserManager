@@ -738,7 +738,29 @@ app.post('/api/cbt/sessions/:id/jawaban', (req, res) => {
       });
 
       const sheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
-      res.json({ success: true, url: sheetUrl, rows: rows.length });
+
+      // ── Share ke group guru ───────────────────────────────────────────────
+      const _cfg2 = require('../config');
+      const shareTarget2 = _cfg2.TEACHER_GROUP;
+      let sharedTo2 = null;
+      if (shareTarget2) {
+        try {
+          await drive.permissions.create({
+            fileId: spreadsheetId,
+            sendNotificationEmail: false,
+            requestBody: {
+              type:         'group',
+              role:         'reader',
+              emailAddress: shareTarget2,
+            },
+          });
+          sharedTo2 = shareTarget2;
+        } catch(shareErr) {
+          console.warn('[cbt export] Share gagal:', shareErr.message);
+        }
+      }
+
+      res.json({ success: true, url: sheetUrl, rows: rows.length, shared_to: sharedTo2 });
     } catch(err) { handleError(res, err); }
   });
 

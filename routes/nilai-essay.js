@@ -4,7 +4,7 @@
 
 const cbtDb = require('../db/cbt');
 const pkgDb = require('../db/package');
-const { getSheetsClient, handleError } = require('../helpers/auth');
+const { getSheetsClient, getDriveClient, handleError } = require('../helpers/auth');
 
 module.exports = function(app) {
 
@@ -354,9 +354,34 @@ module.exports = function(app) {
       });
 
       const url = `https://docs.google.com/spreadsheets/d/${ssId}`;
+
+      // ── Share ke group guru ───────────────────────────────────────────────
+      const _cfg = require('../config');
+      const shareTarget = _cfg.TEACHER_GROUP;
+      let sharedTo = null;
+      if (shareTarget) {
+        try {
+          const drive = await getDriveClient();
+          await drive.permissions.create({
+            fileId: ssId,
+            sendNotificationEmail: false,
+            requestBody: {
+              type:         'group',
+              role:         'reader',
+              emailAddress: shareTarget,
+            },
+          });
+          sharedTo = shareTarget;
+        } catch(shareErr) {
+          // Jangan gagalkan export hanya karena share gagal
+          console.warn('[nilai-essay] Share gagal:', shareErr.message);
+        }
+      }
+
       res.json({
         success: true,
         url,
+        shared_to: sharedTo,
         stats: {
           totalPeserta: rekapRows.length,
           avg, maxNilai, minNilai,
