@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GWS Manager — Karya Bangsa</title>
+  <title>GWS Manager — <%= school.SCHOOL_SHORT_NAME %></title>
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content="GWS Manager — <%= school.SCHOOL_SHORT_NAME %>">
+  <meta property="og:description" content="Platform manajemen Google Workspace <%= school.SCHOOL_FULL_NAME %>">
+  <meta property="og:type"        content="website">
+  <meta property="og:image"       content="https://<%= school.SCHOOL_DOMAIN %>/icons/og-image.png">
+  <meta property="og:locale"      content="id_ID">
+  <meta name="robots"             content="noindex, nofollow">
+  <meta name="description"        content="Platform manajemen Google Workspace <%= school.SCHOOL_FULL_NAME %>">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css">

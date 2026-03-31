@@ -13,8 +13,8 @@ module.exports = {
 
   // === KONFIGURASI SEKOLAH (baru) ===
   // Ubah di sini saja kalau mau pakai untuk sekolah lain
-  SCHOOL_FULL_NAME:  process.env.SCHOOL_FULL_NAME  || "Sekolah Anda",
-  SCHOOL_SHORT_NAME: process.env.SCHOOL_SHORT_NAME || "ForgeEdu",
+  SCHOOL_FULL_NAME:  process.env.SCHOOL_FULL_NAME  || "SMK Karya Bangsa",
+  SCHOOL_SHORT_NAME: process.env.SCHOOL_SHORT_NAME || "Karya Bangsa",
   SCHOOL_DOMAIN:     process.env.SCHOOL_DOMAIN     || "karyabangsa.sch.id",
 
   // Root Org Unit paling atas (sesuai screenshot Google Admin kamu)
