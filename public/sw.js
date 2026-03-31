@@ -1,19 +1,19 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // SERVICE WORKER — CBT Siswa PWA
 // Cache Strategy + Background Sync
+// FIX v2: offline response pakai 503 (bukan 202) agar tidak dianggap sukses
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const SW_VERSION   = 'cbt-sw-v1';
-const CACHE_STATIC = 'cbt-static-v1';
-const CACHE_SOAL   = 'cbt-soal-v1';
+const SW_VERSION   = 'cbt-sw-v2';       // ← naik versi agar SW refresh otomatis
+const CACHE_STATIC = 'cbt-static-v2';   // ← naik versi agar cache lama dihapus
+const CACHE_SOAL   = 'cbt-soal-v2';
 const SYNC_TAG     = 'cbt-jawaban-sync';
 
-// Aset statis yang di-cache saat install
 const STATIC_ASSETS = [
   '/cbt-siswa.html',
   '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 // ── INSTALL ───────────────────────────────────────────────────────────────────
@@ -49,28 +49,29 @@ self.addEventListener('fetch', event => {
   // Hanya handle same-origin
   if (url.origin !== self.location.origin) return;
 
-  // API soal/siswa → Network First, cache sebagai fallback
-  if (url.pathname.includes('/soal/siswa')) {
-    event.respondWith(networkFirstSoal(request));
+  // ✅ FIX: Semua endpoint /api/ — JANGAN di-cache, pass-through saja
+  // Kalau offline, lempar error agar client (cbt-offline.js) bisa handle
+  if (url.pathname.startsWith('/api/')) {
+    // Khusus POST jawaban: pakai fallback yang benar
+    if (url.pathname.includes('/jawaban') && request.method === 'POST') {
+      event.respondWith(fetchWithOfflineFallback(request));
+      return;
+    }
+    // API soal: network first, boleh cache sebagai fallback offline
+    if (url.pathname.includes('/soal/siswa')) {
+      event.respondWith(networkFirstSoal(request));
+      return;
+    }
+    // API lainnya (health, validate-token, submit, dll): pass-through tanpa cache
     return;
-  }
-
-  // API jawaban POST → jangan di-cache, biarkan lewat
-  if (url.pathname.includes('/jawaban') && request.method === 'POST') {
-    event.respondWith(fetchWithOfflineFallback(request));
-    return;
-  }
-
-  // API submit POST → biarkan lewat, offline ditangani di client
-  if (url.pathname.includes('/submit') && request.method === 'POST') {
-    return; // biarkan fetch normal
   }
 
   // Static files → Cache First
   if (
     url.pathname === '/cbt-siswa.html' ||
     url.pathname.startsWith('/icons/') ||
-    url.pathname === '/manifest.json'
+    url.pathname === '/manifest.json' ||
+    url.pathname.startsWith('/js/')
   ) {
     event.respondWith(cacheFirst(request));
     return;
@@ -116,15 +117,21 @@ async function networkFirstSoal(request) {
 }
 
 // ── FETCH WITH OFFLINE FALLBACK (untuk POST jawaban) ─────────────────────────
+// ✅ FIX UTAMA: kembalikan 503 (bukan 202) saat offline
+// Sebelumnya 202 dianggap r.ok=true oleh cbt-offline.js → jawaban dianggap
+// sudah terkirim padahal belum. Dengan 503, r.ok=false → masuk queue dengan benar
 async function fetchWithOfflineFallback(request) {
   try {
     const response = await fetch(request.clone());
     return response;
   } catch {
-    // Return response yang menandakan perlu di-queue
+    console.log('[SW] Offline — jawaban masuk antrian sync');
     return new Response(
       JSON.stringify({ success: false, offline: true, queued: true }),
-      { status: 202, headers: { 'Content-Type': 'application/json' } }
+      {
+        status: 503,   // ← BUKAN 202! 503 = r.ok false → client akan enqueue
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }
@@ -139,7 +146,6 @@ self.addEventListener('sync', event => {
 
 async function syncJawaban() {
   console.log('[SW] Starting background sync...');
-  // Kirim pesan ke semua client untuk mulai sync
   const clients = await self.clients.matchAll({ type: 'window' });
   for (const client of clients) {
     client.postMessage({ type: 'SW_SYNC_TRIGGERED' });
@@ -153,7 +159,6 @@ self.addEventListener('message', event => {
   }
 
   if (event.data?.type === 'CACHE_SOAL') {
-    // Cache soal yang dikirim dari client
     const { url, data } = event.data;
     if (url && data) {
       caches.open(CACHE_SOAL).then(cache => {

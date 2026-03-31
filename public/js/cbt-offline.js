@@ -1,15 +1,14 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // CBT OFFLINE — IndexedDB + Sync Manager
-// Menyimpan jawaban lokal saat offline, sync saat online kembali
+// FIX v2: tambah cache:'no-store' di semua fetch agar SW tidak cache API calls
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const CBTOffline = (() => {
 
   const DB_NAME    = 'cbt-offline-db';
   const DB_VERSION = 1;
-  const STORE_ANS  = 'answers';    // jawaban per soal
-  const STORE_Q    = 'sync_queue'; // antrian POST yang gagal
-  const GRACE_MS   = 5 * 60 * 1000; // grace period 5 menit setelah deadline
+  const STORE_ANS  = 'answers';
+  const STORE_Q    = 'sync_queue';
 
   let _db        = null;
   let _sessionId = null;
@@ -28,11 +27,9 @@ const CBTOffline = (() => {
 
     _db = await openDB();
 
-    // Listen online/offline
     window.addEventListener('online',  () => { _isOnline = true;  onOnline(); });
     window.addEventListener('offline', () => { _isOnline = false; onOffline(); });
 
-    // Listen pesan dari Service Worker
     if (navigator.serviceWorker) {
       navigator.serviceWorker.addEventListener('message', event => {
         if (event.data?.type === 'SW_SYNC_TRIGGERED') {
@@ -41,7 +38,7 @@ const CBTOffline = (() => {
       });
     }
 
-    // Auto-sync interval 5 detik (fallback kalau Background Sync tidak support)
+    // Auto-sync interval 5 detik
     _syncItv = setInterval(() => {
       if (_isOnline) flushQueue();
     }, 5000);
@@ -57,19 +54,13 @@ const CBTOffline = (() => {
 
       req.onupgradeneeded = e => {
         const db = e.target.result;
-
-        // Store jawaban
         if (!db.objectStoreNames.contains(STORE_ANS)) {
           const ansStore = db.createObjectStore(STORE_ANS, { keyPath: 'key' });
           ansStore.createIndex('sessionId', 'sessionId', { unique: false });
           ansStore.createIndex('synced',    'synced',    { unique: false });
         }
-
-        // Store antrian sync
         if (!db.objectStoreNames.contains(STORE_Q)) {
-          const qStore = db.createObjectStore(STORE_Q, {
-            keyPath: 'id', autoIncrement: true,
-          });
+          const qStore = db.createObjectStore(STORE_Q, { keyPath: 'id', autoIncrement: true });
           qStore.createIndex('sessionId', 'sessionId', { unique: false });
           qStore.createIndex('synced',    'synced',    { unique: false });
         }
@@ -92,15 +83,13 @@ const CBTOffline = (() => {
     return dbPut(STORE_ANS, item);
   }
 
-  // ── Ambil semua jawaban lokal untuk sesi ini ────────────────────────────────
+  // ── Ambil semua jawaban lokal ───────────────────────────────────────────────
   async function getLocalAnswers() {
     if (!_db) return {};
     const all = await dbGetByIndex(STORE_ANS, 'sessionId', _sessionId);
     const map = {};
     all.forEach(item => {
-      if (item.userEmail === _userEmail) {
-        map[item.nomor] = item.jawaban;
-      }
+      if (item.userEmail === _userEmail) map[item.nomor] = item.jawaban;
     });
     return map;
   }
@@ -111,7 +100,7 @@ const CBTOffline = (() => {
     const key  = `${_sessionId}_${_userEmail}_${nomor}`;
     const item = await dbGet(STORE_ANS, key);
     if (item) {
-      item.synced  = true;
+      item.synced   = true;
       item.syncedAt = new Date().toISOString();
       await dbPut(STORE_ANS, item);
     }
@@ -122,11 +111,9 @@ const CBTOffline = (() => {
     if (!_db) return;
     const item = {
       sessionId: _sessionId, userEmail: _userEmail,
-      roomId: _roomId,
-      nomor, jawaban,
-      synced:   false,
-      retries:  0,
-      savedAt:  new Date().toISOString(),
+      roomId: _roomId, nomor, jawaban,
+      synced: false, retries: 0,
+      savedAt: new Date().toISOString(),
     };
     return dbAdd(STORE_Q, item);
   }
@@ -158,16 +145,32 @@ const CBTOffline = (() => {
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify(body),
           signal:  AbortSignal.timeout(8000),
+          cache:   'no-store',   // ✅ FIX: jangan cache request API
         });
 
-        if (r.ok || r.status === 200) {
-          item.synced   = true;
-          item.syncedAt = new Date().toISOString();
-          await dbPut(STORE_Q, item);
-          await markSynced(item.nomor);
-          synced++;
+        // ✅ FIX: hanya tandai synced kalau benar-benar 200/201
+        // Sebelumnya r.ok (200-299) termasuk 202 dari SW saat offline
+        // Sekarang SW sudah return 503 saat offline, tapi kita tambah guard ini
+        if ((r.ok || r.status === 200 || r.status === 201) && r.status !== 503) {
+          // Cek apakah response adalah offline fallback dari SW
+          let isOfflineFallback = false;
+          try {
+            const clone = r.clone();
+            const j = await clone.json();
+            if (j.offline === true) isOfflineFallback = true;
+          } catch(_) {}
+
+          if (!isOfflineFallback) {
+            item.synced   = true;
+            item.syncedAt = new Date().toISOString();
+            await dbPut(STORE_Q, item);
+            await markSynced(item.nomor);
+            synced++;
+          } else {
+            // SW sedang offline, jangan tandai synced
+            console.log('[CBTOffline] SW offline fallback — skip mark synced');
+          }
         } else if (r.status === 403) {
-          // Sesi berakhir / sudah submit — stop sync
           const j = await r.json().catch(() => ({}));
           if (j.submitted) {
             item.synced = true;
@@ -175,6 +178,7 @@ const CBTOffline = (() => {
           }
           break;
         } else {
+          // 503, 500, dll — retry nanti
           item.retries = (item.retries || 0) + 1;
           await dbPut(STORE_Q, item);
         }
@@ -194,7 +198,6 @@ const CBTOffline = (() => {
 
   // ── Kirim jawaban (dengan fallback ke queue) ────────────────────────────────
   async function sendAnswer(nomor, jawaban) {
-    // Selalu simpan lokal dulu
     await saveAnswer(nomor, jawaban);
 
     if (!_isOnline) {
@@ -216,21 +219,30 @@ const CBTOffline = (() => {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
         signal:  AbortSignal.timeout(8000),
+        cache:   'no-store',   // ✅ FIX: jangan cache
       });
 
-      if (r.ok) {
-        await markSynced(nomor);
-        updateSyncStatus();
-        return { synced: true };
+      // ✅ FIX: cek apakah ini offline fallback dari SW
+      if (r.ok && r.status !== 503) {
+        let isOfflineFallback = false;
+        try {
+          const j = await r.clone().json();
+          if (j.offline === true) isOfflineFallback = true;
+        } catch(_) {}
+
+        if (!isOfflineFallback) {
+          await markSynced(nomor);
+          updateSyncStatus();
+          return { synced: true };
+        }
       }
 
-      // Gagal tapi online — masukkan ke queue
+      // Gagal / offline fallback — masukkan ke queue
       await enqueue(nomor, jawaban);
       updateSyncStatus();
       return { queued: true };
 
     } catch {
-      // Network error
       await enqueue(nomor, jawaban);
       updateSyncStatus();
       return { queued: true };
@@ -240,21 +252,19 @@ const CBTOffline = (() => {
   // ── Submit dengan flush antrian dulu ────────────────────────────────────────
   async function submitWithFlush(timeoutMs = 10000) {
     if (!_isOnline) {
-      // Offline saat submit — simpan flag, tunggu online
       await saveSubmitFlag();
       return { queued: true, offline: true };
     }
 
-    // Flush semua jawaban pending dulu
     await flushQueue();
 
-    // Submit ke server
     try {
       const r = await fetch(`/api/cbt/sessions/${_sessionId}/submit`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ userEmail: _userEmail }),
         signal:  AbortSignal.timeout(timeoutMs),
+        cache:   'no-store',   // ✅ FIX
       });
       const j = await r.json().catch(() => ({}));
       return { success: r.ok, ...j };
@@ -267,13 +277,12 @@ const CBTOffline = (() => {
   async function saveSubmitFlag() {
     if (!_db) return;
     const item = {
-      key:        `submit_${_sessionId}_${_userEmail}`,
-      sessionId:  _sessionId, userEmail: _userEmail,
-      roomId:     _roomId,
-      type:       'submit',
-      jawaban:    null, nomor: 0,
-      synced:     false, retries: 0,
-      savedAt:    new Date().toISOString(),
+      key:       `submit_${_sessionId}_${_userEmail}`,
+      sessionId: _sessionId, userEmail: _userEmail,
+      roomId:    _roomId, type: 'submit',
+      jawaban:   null, nomor: 0,
+      synced:    false, retries: 0,
+      savedAt:   new Date().toISOString(),
     };
     await dbPut(STORE_Q, item);
   }
@@ -289,10 +298,7 @@ const CBTOffline = (() => {
   async function updateSyncStatus() {
     if (!_onStatusChange) return;
     const pending = await getPendingCount();
-    _onStatusChange({
-      isOnline: _isOnline,
-      pending,
-    });
+    _onStatusChange({ isOnline: _isOnline, pending });
   }
 
   // ── Event handlers online/offline ───────────────────────────────────────────
@@ -300,11 +306,10 @@ const CBTOffline = (() => {
     console.log('[CBTOffline] Back online — flushing queue...');
     updateSyncStatus();
 
-    // Register background sync kalau tersedia
     if ('serviceWorker' in navigator && 'SyncManager' in window) {
       navigator.serviceWorker.ready.then(sw => {
         sw.sync.register('cbt-jawaban-sync').catch(() => flushQueue());
-      });
+      }).catch(() => flushQueue());
     } else {
       flushQueue();
     }
