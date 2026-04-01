@@ -180,4 +180,5 @@ module.exports = {
   updateUser, resetPassword, deleteUser, verifyPassword, updateLastLogin,
   createSession, getSession, deleteSession, cleanExpiredSessions,
   hasAnyUser, getUserAccess, setUserAccess,
+  _db: db,
 };

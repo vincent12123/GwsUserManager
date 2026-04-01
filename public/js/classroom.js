@@ -375,25 +375,36 @@ async function importOUPreview() {
   btn.disabled = true; btn.innerHTML = '<div class="spinner spin-sm"></div>';
 
   try {
-    // Kalau allUsers belum dimuat (User Manager belum dibuka), fetch langsung dari API
-    if (!allUsers.length) {
-      const r = await fetch('/api/users');
+    // Ambil dari cache (instant)
+    let users = [];
+    const rc = await fetch(`/api/cache/users?orgUnit=${encodeURIComponent(ou)}`, { cache: 'no-store' });
+    const jc = await rc.json();
+
+    if (jc.success && jc.total > 0) {
+      // Data ada di cache ✅
+      users = jc.users;
+    } else {
+      // Cache kosong — fallback ke Google API langsung + kasih info
+      toast('Cache kosong — mengambil dari Google API... (tekan Sync untuk mempercepat)', 'info');
+      const r = await fetch(`/api/users?orgUnit=${encodeURIComponent(ou)}&fetchAll=true`);
       const j = await r.json();
-      allUsers = j.users || j || [];
+      users = (j.users || []).filter(u => !u.suspended && !u.archived);
     }
 
-    // Filter user berdasarkan OU yang dipilih
-    const users = allUsers.filter(u => u.orgUnitPath === ou && !u.archived && !u.suspended);
     importOUPreviewData = users.map(u => u.primaryEmail);
 
     const preview = document.getElementById('import-ou-preview');
+    const cacheNote = jc.fromCache
+      ? `<span style="color:var(--muted);font-size:10px">⚡ dari cache lokal</span>`
+      : `<span style="color:var(--amber);font-size:10px">⚠️ dari Google API — jalankan Sync untuk mempercepat</span>`;
+
     if (!users.length) {
       preview.innerHTML = `<div style="padding:12px;color:var(--red);font-size:12px">Tidak ada user aktif di org unit ini.</div>`;
       document.getElementById('import-ou-confirm-btn').disabled = true;
     } else {
       preview.innerHTML = `
         <div style="padding:10px 12px;background:var(--accent-lt);border:1px solid rgba(26,110,250,.2);border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--accent-dk)">
-          ✓ <strong>${users.length} siswa</strong> dari <code>${esc(ou)}</code> akan di-enroll ke kelas ini.<br>
+          ✓ <strong>${users.length} siswa</strong> dari <code>${esc(ou)}</code> akan di-enroll ke kelas ini. ${cacheNote}<br>
           <span style="color:var(--muted)">Siswa yang sudah terdaftar akan di-skip otomatis.</span>
         </div>
         <div style="max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;font-size:12px">
@@ -478,25 +489,39 @@ function clearTeacherSearch() {
   document.getElementById('add-teacher-text').textContent   = '';
 }
 
-// Populate import-ou dropdown — fetch dulu kalau allOrgUnits belum dimuat
+// Populate import-ou dropdown — ambil dari cache SQLite, fallback ke API
 async function populateImportOUDropdown() {
   const sel = document.getElementById('import-ou-select');
   if (!sel) return;
 
-  // Kalau belum ada data OU, fetch sekarang (tidak perlu buka User Manager dulu)
-  if (!allOrgUnits.length) {
-    try {
-      sel.innerHTML = `<option value="">⏳ Memuat Org Unit...</option>`;
-      const r  = await fetch('/api/orgunits');
-      const data = await r.json();
-      allOrgUnits = data || [];
-    } catch(e) {
-      sel.innerHTML = `<option value="">❌ Gagal memuat OU</option>`;
-      return;
-    }
-  }
+  sel.innerHTML = `<option value="">⏳ Memuat Org Unit...</option>`;
+  try {
+    // Coba dari cache dulu
+    const rc = await fetch('/api/cache/orgunits');
+    const jc = await rc.json();
 
-  const sorted = [...allOrgUnits].sort((a, b) => a.orgUnitPath.localeCompare(b.orgUnitPath));
-  sel.innerHTML = `<option value="">-- Pilih Org Unit --</option>` +
-    sorted.map(o => `<option value="${esc(o.orgUnitPath)}">${esc(o.orgUnitPath)}</option>`).join('');
+    let ous = [];
+    if (jc.success && jc.total > 0) {
+      ous = jc.data;
+      allOrgUnits = ous; // update cache lokal
+    } else {
+      // Fallback ke Google API
+      const r    = await fetch('/api/orgunits');
+      const data = await r.json();
+      ous        = data || [];
+      allOrgUnits = ous;
+    }
+
+    const sorted = [...ous].sort((a, b) => a.orgUnitPath.localeCompare(b.orgUnitPath));
+    sel.innerHTML = `<option value="">-- Pilih Org Unit --</option>` +
+      sorted.map(o => `<option value="${esc(o.orgUnitPath)}">${esc(o.orgUnitPath)}</option>`).join('');
+  } catch(e) {
+    sel.innerHTML = `<option value="">❌ Gagal memuat OU</option>`;
+  }
+}
+
+// Alias untuk dipanggil dari sync.js saat sync selesai
+async function loadOUSelectForImport() {
+  allOrgUnits = []; // reset cache lokal agar reload fresh
+  await populateImportOUDropdown();
 }

@@ -16,6 +16,13 @@
     <button class="nav-item active" onclick="navigate('dashboard')"><span class="nav-icon">📊</span> Dashboard</button>
     <button class="nav-item" id="nav-adminusers" onclick="navigate('adminusers')"><span class="nav-icon">⚙️</span> Kelola Akun Admin</button>
 
+        <!-- Sync Status Bar -->
+    <div id="sync-status-bar" style="margin:4px 8px 2px;padding:7px 10px;
+      background:rgba(255,255,255,.04);border:1px solid var(--border);
+      border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px">
+      <span style="font-size:11px;color:var(--muted)">⏳ Memuat status...</span>
+    </div>
+
     <div class="nav-section-label">Manajemen Akun</div>
     <button class="nav-item" onclick="navigate('users')"><span class="nav-icon">👥</span> User Manager</button>
     <button class="nav-item" onclick="navigate('bulk')"><span class="nav-icon">📋</span> Bulk Tambah User</button>

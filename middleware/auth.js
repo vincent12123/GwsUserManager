@@ -10,6 +10,7 @@ const PUBLIC_PAGES = [
   '/login.html',
   '/setup.html',
   '/cbt-siswa.html',
+  '/cbt-siswa-app.html',
   '/monitor-ruang.html',
   '/nilai-essay.html',
   '/reset.html',
@@ -34,8 +35,8 @@ const ROLE_RULES = {
   '/api/audit':       ['super_admin'],
 
   // super_admin + operator
-  '/api/users':       ['super_admin','operator'],
-  '/api/orgunits':    ['super_admin','operator'],
+  '/api/users':       ['super_admin','operator','guru'], // guru perlu akses untuk lihat profil diri
+  '/api/orgunits':    ['super_admin','operator','guru'], // guru perlu akses untuk lihat kelas
   '/api/groups':      ['super_admin','operator'],
   '/api/cbt-package': ['super_admin','operator'],
   '/api/dashboard':   ['super_admin','operator','guru'],

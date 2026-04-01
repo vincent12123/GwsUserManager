@@ -29,7 +29,23 @@ app.set('views', path.join(__dirname, 'views'));
 // Buat folder upload soal jika belum ada
 const uploadDir = path.join(__dirname, 'public', 'uploads', 'soal');
 if (!require('fs').existsSync(uploadDir)) require('fs').mkdirSync(uploadDir, { recursive: true });
-app.use(express.static(path.join(__dirname, 'public')));
+
+// JS dan CSS: no-cache agar update langsung terasa tanpa Ctrl+Shift+R
+// Gambar dan font: cache 7 hari
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.ejs')) {
+      // Selalu cek ke server — revalidate tiap request
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    } else if (/\.(png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf)$/.test(filePath)) {
+      // Aset statis jarang berubah — cache 7 hari
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+    } else if (filePath.endsWith('manifest.json') || filePath.endsWith('sw.js')) {
+      // PWA files — jangan di-cache terlalu lama
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 // Auth middleware — untuk halaman dan API yang butuh login
 app.use(authMiddleware);
@@ -72,10 +88,12 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Routes
+// Routes
 const routeFiles = [
   'login', 'bank', 'sspr', 'audit', 'users', 'groups', 'classroom', 'content', 'forms',
   'security', 'cbt', 'cbt-package', 'nilai-essay',
   'dashboard', 'teachers', 'mcp', 'drive-audit',
+  'sync',   // ← cache sinkronisasi GWS → SQLite
 ];
 
 for (const name of routeFiles) {

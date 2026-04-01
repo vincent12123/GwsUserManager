@@ -19,6 +19,7 @@
 <script src="/js/admin-users.js"></script>
 <script src="/js/bank.js"></script>
 <script src="/js/sspr.js"></script>
+<script src="/js/sync.js"></script>
 
 <script>
 // ── AUTH INIT ─────────────────────────────────────────────────────────────────
@@ -121,6 +122,12 @@ async function submitChangePassword() {
 
 // Jalankan saat halaman load
 initAuth();
+// Load sync status dan auto-sync jika perlu
+setTimeout(async () => {
+  await initSync();       // tampilkan status sync di sidebar
+  autoSyncIfStale();      // sync otomatis kalau cache kosong/stale
+}, 1500);
+
 // ── Render KaTeX Math — dipanggil setelah konten soal dirender ───────────────
 function renderMath(el) {
   if (typeof renderMathInElement === 'undefined') return;
