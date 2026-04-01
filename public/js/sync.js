@@ -35,17 +35,13 @@ function renderSyncStatus() {
     return `${Math.floor(hr / 24)} hari lalu`;
   }
 
-  const color  = isCacheReady ? 'var(--green)' : 'var(--amber)';
-  const icon   = isCacheReady ? '🟢' : '🟡';
-  const label  = isCacheReady
-    ? `${icon} ${totalUsers} user · ${totalOUs} OU · Sync ${timeAgo(lastUserSync)}`
-    : `${icon} Cache kosong — klik Sync`;
-
-  el.innerHTML = `
-    <span style="font-size:11px;color:${color}">${label}</span>
-    <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:6px"
-      onclick="doSync('full')" id="btn-do-sync">🔄 Sync</button>
-  `;
+  if (isCacheReady) {
+    el.innerHTML = `<button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;color:var(--green)"
+      onclick="doSync('full')" id="btn-do-sync">🟢 Synced</button>`;
+  } else {
+    el.innerHTML = `<button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;color:var(--amber)"
+      onclick="doSync('full')" id="btn-do-sync">🟡 Sync</button>`;
+  }
 }
 
 async function doSync(type = 'full') {
