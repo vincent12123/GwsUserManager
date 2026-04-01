@@ -38,7 +38,7 @@ const ROLE_RULES = {
   '/api/users':       ['super_admin','operator','guru'], // guru perlu akses untuk lihat profil diri
   '/api/orgunits':    ['super_admin','operator','guru'], // guru perlu akses untuk lihat kelas
   '/api/groups':      ['super_admin','operator'],
-  '/api/cbt-package': ['super_admin','operator'],
+  '/api/cbt-package': ['super_admin','operator','guru'], // guru perlu akses untuk lihat paket soal
   '/api/dashboard':   ['super_admin','operator','guru'],
 
   // Semua role yang login

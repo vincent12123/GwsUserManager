@@ -59,7 +59,7 @@ const ROLES = {
   },
   guru: {
     label: 'Guru',
-    menus: ['dashboard','classroom','cbt','mcp','bank'],
+    menus: ['dashboard','classroom','cbt','cbtpkg','mcp','bank'],
     color: '#34d399',
   },
 };
