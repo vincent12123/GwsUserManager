@@ -49,7 +49,8 @@ async function doSync(type = 'full') {
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spin-sm" style="display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite"></div>'; }
 
   const statusBar = document.getElementById('sync-status-bar');
-  if (statusBar) statusBar.querySelector('span').textContent = '⏳ Sinkronisasi...';
+  const statusSpan = statusBar?.querySelector('span');
+  if (statusSpan) statusSpan.textContent = '⏳ Sinkronisasi...';
 
   try {
     const r = await fetch(`/api/sync/${type}`, { method: 'POST' });
