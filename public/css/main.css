@@ -49,6 +49,10 @@
     .brand-sub  { font-size: 10px; color: rgba(255,255,255,.35); font-weight: 500; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
 
     .sidebar-nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.25); }
     .nav-section-label {
       font-size: 9.5px; font-weight: 700; color: rgba(255,255,255,.25);
       text-transform: uppercase; letter-spacing: .8px;

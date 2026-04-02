@@ -221,13 +221,33 @@ async function daLoadSharing() {
                 <th style="padding:7px 12px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase">${keyFn === 'email' ? 'Dishare ke' : 'Tipe'}</th>
                 <th style="padding:7px 12px;text-align:left;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase">Role</th>
                 <th style="padding:7px 12px;text-align:right;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase">Ukuran</th>
+                <th style="padding:7px 12px;text-align:center;color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase">Aksi</th>
               </tr></thead>
               <tbody>
                 ${items.map(s => `<tr style="border-top:1px solid var(--border)">
-                  <td style="padding:8px 12px;font-weight:600">${esc(s.fileName)}</td>
-                  <td style="padding:8px 12px;color:${color}">${esc(keyFn === 'email' ? s.email : (s.category === 'anyone_link' ? 'Siapa saja dengan link' : s.domain || '—'))}</td>
+                  <td style="padding:8px 12px;font-weight:600;max-width:240px">
+                    ${s.webViewLink
+                      ? `<a href="${s.webViewLink}" target="_blank" rel="noopener"
+                           style="color:var(--text);text-decoration:none"
+                           title="Buka di Google Drive">
+                           ${esc(s.fileName)}
+                           <span style="font-size:10px;color:var(--muted);margin-left:4px">↗</span>
+                         </a>`
+                      : esc(s.fileName)
+                    }
+                  </td>
+                  <td style="padding:8px 12px;color:${color}">${esc(keyFn === 'email' ? s.email : (s.category === 'anyone_link' ? '🌐 Siapa saja dengan link' : s.domain || '—'))}</td>
                   <td style="padding:8px 12px;font-size:11px;color:var(--muted)">${s.role}</td>
                   <td style="padding:8px 12px;text-align:right;font-size:11px;color:var(--muted)">${s.sizeMB > 0 ? s.sizeMB + ' MB' : '—'}</td>
+                  <td style="padding:8px 12px;text-align:center">
+                    ${s.webViewLink
+                      ? `<a href="${s.webViewLink}" target="_blank" rel="noopener"
+                           class="btn btn-ghost"
+                           style="padding:2px 8px;font-size:11px;text-decoration:none"
+                           title="Buka file di Google Drive">🔗 Buka</a>`
+                      : '—'
+                    }
+                  </td>
                 </tr>`).join('')}
               </tbody>
             </table>
