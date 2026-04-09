@@ -438,6 +438,8 @@ function getSoal(sessionId, withKunci = true) {
     const s = {
       id: r.id, nomor: r.nomor, tipe: r.tipe, soal: r.soal, bobot: r.bobot,
       opsi: r.tipe === 'PG' ? { A: r.opsi_a, B: r.opsi_b, C: r.opsi_c, D: r.opsi_d, E: r.opsi_e } : null,
+      teks_bacaan:    r.teks_bacaan    || null,
+      teks_bacaan_id: r.teks_bacaan_id || null,
     };
     if (withKunci) { s.kunci = r.kunci; s.pembahasan = r.pembahasan; }
     return s;
