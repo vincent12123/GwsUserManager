@@ -289,6 +289,30 @@ html, body { height: 100%; font-family: var(--sans); background: var(--bg); colo
   color: var(--text); font-weight: 400;
 }
 
+/* ── Teks Bacaan ── */
+.teks-bacaan-card {
+  margin: 0 0 8px;
+  background: rgba(45,212,191,.05);
+  border: 1px solid rgba(45,212,191,.2);
+  border-radius: var(--radius); overflow: hidden;
+}
+.teks-bacaan-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: rgba(45,212,191,.08);
+  cursor: pointer; user-select: none;
+}
+.teks-bacaan-label {
+  font-size: 12px; font-weight: 700;
+  color: var(--teal); text-transform: uppercase; letter-spacing: .5px;
+}
+.teks-bacaan-toggle { font-size: 11px; color: var(--teal); opacity: .7; }
+.teks-bacaan-body {
+  padding: 12px 16px;
+  font-size: 14px; line-height: 1.85; color: var(--dim);
+  border-top: 1px solid rgba(45,212,191,.15); white-space: pre-wrap;
+}
+
 /* ── Opsi PG ── */
 .opsi-list {
   padding: 0 14px 16px;
@@ -886,6 +910,15 @@ function onKeyGuard(e){
   if(blocked){e.preventDefault();e.stopPropagation();recordCheat('devtools_attempt',`Shortcut DevTools: ${e.ctrlKey?'Ctrl+':''}${e.shiftKey?'Shift+':''}${e.key}`);}
 }
 
+function toggleTeksBacaan(id) {
+  const el  = document.getElementById(id);
+  const tog = document.getElementById(id + '-toggle');
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display  = hidden ? 'block' : 'none';
+  if (tog) tog.textContent = hidden ? '▼ Lipat' : '▶ Buka';
+}
+
 /* ══════════════════════════════════════════════
    RENDER SOAL
 ══════════════════════════════════════════════ */
@@ -908,6 +941,17 @@ function renderSoal(idx){
   let soalTxt=esc(fixLatex(s.soal))
     .replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
     .replace(/\n/g,'<br>');
+
+  let teksBacaanHtml = '';
+  if (s.teks_bacaan) {
+    const tbId = 'tb-body-' + idx;
+    teksBacaanHtml = '<div class="teks-bacaan-card">' +
+      '<div class="teks-bacaan-head" onclick="toggleTeksBacaan(\''+tbId+'\')">' +
+      '<span class="teks-bacaan-label">📖 Teks Bacaan</span>' +
+      '<span class="teks-bacaan-toggle" id="'+tbId+'-toggle">▼ Lipat</span></div>' +
+      '<div class="teks-bacaan-body" id="'+tbId+'">' + esc(s.teks_bacaan) + '</div></div>';
+  }
+
   const answeredCount=Object.keys(JAWABAN).length;
   const dots=SOAL.map((q,i)=>{
     const cls=i===idx?'current':JAWABAN[q.nomor]?'answered':'';
@@ -915,6 +959,7 @@ function renderSoal(idx){
   }).join('');
 
   document.getElementById('exam-body').innerHTML=`
+    ${teksBacaanHtml}
     <div class="soal-card">
       <div class="soal-badge">
         <span class="badge-no">Soal ${s.displayNomor||s.nomor}</span>
