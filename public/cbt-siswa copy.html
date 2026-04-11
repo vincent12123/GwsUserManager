@@ -2,13 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<!-- ✅ FIX: satu viewport saja, dengan viewport-fit=cover untuk Capacitor -->
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-
-<!-- Capacitor JS bridge — deteksi apakah jalan di dalam app native -->
-<script>
-  window.isCapacitor = typeof Capacitor !== 'undefined';
-</script>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <title>CBT — Ujian</title>
 <!-- PWA -->
 <link rel="manifest" href="/manifest.json">
@@ -17,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="CBT Siswa">
-<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.svg">
 <!-- KaTeX — render notasi matematika -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
@@ -51,16 +45,7 @@
   --serif:    'Fraunces', serif;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-/* ✅ FIX GAP: hapus padding-top/bottom safe area — tidak diperlukan karena fullscreen */
-html, body {
-  height: 100%;
-  font-family: var(--sans);
-  background: var(--bg);
-  color: var(--text);
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-}
+html, body { height: 100%; font-family: var(--sans); background: var(--bg); color: var(--text); overflow: hidden; -webkit-font-smoothing: antialiased; }
 
 /* ── OFFLINE INDICATOR ── */
 #offline-bar{
@@ -208,8 +193,9 @@ html, body {
 /* ════════════════════════════════
    EXAM
 ════════════════════════════════ */
-#sc-exam { flex-direction: column;padding-top: 26px; }
+#sc-exam { flex-direction: column; }
 
+/* Header */
 .exam-hdr {
   height: 62px; flex-shrink: 0;
   background: var(--surface);
@@ -226,6 +212,7 @@ html, body {
 }
 .hdr-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
 
+/* Timer ring */
 .timer-wrap {
   position: relative; width: 54px; height: 54px;
   display: flex; align-items: center; justify-content: center;
@@ -242,33 +229,25 @@ html, body {
 .timer-val.danger { color: var(--red); animation: blink .7s infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
 
+/* Progress */
 .prog-wrap { height: 2px; background: var(--surface2); flex-shrink: 0; }
 .prog-bar  { height: 100%; background: linear-gradient(90deg, var(--teal), var(--blue)); transition: width .4s; }
 
-/* Warn bar — fixed di paling atas, gantikan posisi status bar */
+/* Warn bar */
 #warn-bar {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 500;
-  height: 26px;
-  background: rgba(251,191,36,.12);
-  border-bottom: 1px solid rgba(251,191,36,.2);
-  color: var(--amber);
-  text-align: center;
-  padding: 0 16px;
-  line-height: 26px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .3px;
-  display: none;
-  flex-shrink: 0;
+  background: rgba(251,191,36,.08); border-bottom: 1px solid rgba(251,191,36,.15);
+  color: var(--amber); text-align: center; padding: 7px 16px;
+  font-size: 11.5px; font-weight: 500; flex-shrink: 0; display: none;
+  letter-spacing: .2px;
 }
 
+/* Exam body */
 .exam-body { flex: 1; overflow-y: auto; padding: 16px 14px 90px; }
 .exam-body::-webkit-scrollbar { width: 4px; }
 .exam-body::-webkit-scrollbar-track { background: transparent; }
 .exam-body::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
 
+/* ── Soal Card ── */
 .soal-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -286,8 +265,10 @@ html, body {
 
 .badge-no {
   font-family: var(--mono); font-size: 11.5px; font-weight: 500;
-  color: var(--blue); background: var(--blue-lt);
-  padding: 3px 10px; border-radius: 6px; letter-spacing: .3px;
+  color: var(--blue);
+  background: var(--blue-lt);
+  padding: 3px 10px; border-radius: 6px;
+  letter-spacing: .3px;
 }
 
 .badge-tipe {
@@ -308,35 +289,17 @@ html, body {
   color: var(--text); font-weight: 400;
 }
 
-.teks-bacaan-card {
-  margin: 0 0 8px;
-  background: rgba(45,212,191,.05);
-  border: 1px solid rgba(45,212,191,.2);
-  border-radius: var(--radius); overflow: hidden;
+/* ── Opsi PG ── */
+.opsi-list {
+  padding: 0 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.teks-bacaan-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px;
-  background: rgba(45,212,191,.08);
-  cursor: pointer; user-select: none;
-}
-.teks-bacaan-label {
-  font-size: 12px; font-weight: 700;
-  color: var(--teal); text-transform: uppercase; letter-spacing: .5px;
-}
-.teks-bacaan-toggle { font-size: 11px; color: var(--teal); opacity: .7; }
-.teks-bacaan-body {
-  padding: 12px 16px;
-  font-size: 14px; line-height: 1.85; color: var(--dim);
-  border-top: 1px solid rgba(45,212,191,.15); white-space: pre-wrap;
-}
-
-.opsi-list { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 8px; }
 
 .opsi-btn {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 16px;
-  border: 1.5px solid var(--border); border-radius: 12px; cursor: pointer;
+  border: 1.5px solid var(--border);
+  border-radius: 12px; cursor: pointer;
   background: var(--surface2);
   font-family: var(--sans); font-size: 14px;
   color: var(--dim); text-align: left; width: 100%;
@@ -350,21 +313,29 @@ html, body {
 .opsi-btn:hover::before { opacity: 1; }
 .opsi-btn:hover { border-color: var(--border2); color: var(--text); transform: translateY(-1px); }
 .opsi-btn:active { transform: scale(.98) translateY(0); }
-.opsi-btn.selected { background: var(--teal-lt); border-color: var(--teal); color: var(--text); }
+
+.opsi-btn.selected {
+  background: var(--teal-lt);
+  border-color: var(--teal);
+  color: var(--text);
+}
 
 .opsi-key {
   width: 30px; height: 30px; flex-shrink: 0;
   border-radius: 8px; border: 1.5px solid var(--border2);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--mono); font-size: 12px; font-weight: 500;
-  color: var(--muted); background: var(--surface); transition: all .18s;
+  color: var(--muted); background: var(--surface);
+  transition: all .18s;
 }
 .opsi-btn.selected .opsi-key {
   background: var(--teal); border-color: var(--teal);
   color: #0c1a18; font-weight: 700;
 }
+
 .opsi-text { flex: 1; line-height: 1.5; }
 
+/* ── Essay ── */
 .essay-wrap { padding: 0 14px 16px; }
 .essay-ta {
   width: 100%;
@@ -377,51 +348,85 @@ html, body {
 .essay-ta:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(45,212,191,.08); }
 .essay-ta::placeholder { color: var(--muted); }
 
+/* ── Nav Grid ── */
 .nav-grid-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;
+  border-radius: 16px; padding: 14px 16px;
+  margin-bottom: 12px;
 }
+
 .nav-header {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
 }
+
 .nav-grid-title {
   font-size: 11px; font-weight: 600; color: var(--muted);
   text-transform: uppercase; letter-spacing: .7px;
 }
-.nav-progress-text { font-size: 11.5px; font-family: var(--mono); font-weight: 500; color: var(--teal); }
+
+.nav-progress-text {
+  font-size: 11.5px; font-family: var(--mono); font-weight: 500;
+  color: var(--teal);
+}
+
 .nav-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+
 .nav-dot {
   width: 36px; height: 36px; border-radius: 9px;
   border: 1.5px solid var(--border);
   font-family: var(--mono); font-size: 11.5px; font-weight: 500;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  background: var(--surface2); color: var(--muted); transition: all .15s;
+  background: var(--surface2); color: var(--muted);
+  transition: all .15s;
 }
 .nav-dot:hover { border-color: var(--border2); color: var(--text); }
 .nav-dot:active { transform: scale(.9); }
-.nav-dot.answered { background: var(--green-lt); border-color: var(--green); color: var(--green); font-weight: 600; }
-.nav-dot.current { background: var(--blue-lt); border-color: var(--blue); color: var(--blue); font-weight: 700; box-shadow: 0 0 0 2px rgba(96,165,250,.15); }
+.nav-dot.answered {
+  background: var(--green-lt); border-color: var(--green);
+  color: var(--green); font-weight: 600;
+}
+.nav-dot.current {
+  background: var(--blue-lt); border-color: var(--blue);
+  color: var(--blue); font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(96,165,250,.15);
+}
 
+/* ── Bottom Bar ── */
 .bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 68px;
-  background: var(--surface); border-top: 1px solid var(--border);
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 68px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   display: flex; align-items: center;
   padding: 0 14px; gap: 10px; z-index: 50;
   backdrop-filter: blur(10px);
 }
+
 .btn-nav {
   padding: 11px 18px; border-radius: 10px;
-  border: 1.5px solid var(--border2); background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  background: var(--surface2);
   font-family: var(--sans); font-size: 13.5px; font-weight: 600;
-  color: var(--dim); cursor: pointer; transition: all .15s;
+  color: var(--dim); cursor: pointer;
+  transition: all .15s;
   flex: 1; text-align: center;
 }
 .btn-nav:hover { color: var(--text); border-color: rgba(255,255,255,.18); }
 .btn-nav:active { transform: scale(.97); }
 .btn-nav:disabled { opacity: .3; cursor: not-allowed; transform: none; }
-.btn-next { background: linear-gradient(135deg, rgba(96,165,250,.15), rgba(96,165,250,.08)); border-color: rgba(96,165,250,.3); color: var(--blue); }
+
+.btn-next {
+  background: linear-gradient(135deg, rgba(96,165,250,.15), rgba(96,165,250,.08));
+  border-color: rgba(96,165,250,.3); color: var(--blue);
+}
 .btn-next:hover { background: rgba(96,165,250,.2); border-color: var(--blue); }
-.btn-submit-main { background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(52,211,153,.1)); border-color: rgba(52,211,153,.3); color: var(--green); font-weight: 700; }
+
+.btn-submit-main {
+  background: linear-gradient(135deg, rgba(52,211,153,.18), rgba(52,211,153,.1));
+  border-color: rgba(52,211,153,.3); color: var(--green);
+  font-weight: 700;
+}
 .btn-submit-main:hover { background: rgba(52,211,153,.25); border-color: var(--green); }
 
 /* ════════════════════════════════
@@ -435,26 +440,59 @@ html, body {
 }
 .overlay.show { display: flex; }
 
+/* Cheat overlay */
 #ov-cheat { background: rgba(10,5,5,.92); }
+
 .cheat-card {
-  background: var(--surface); border: 1px solid rgba(248,113,113,.25);
+  background: var(--surface);
+  border: 1px solid rgba(248,113,113,.25);
   border-radius: 20px; padding: 32px 28px; max-width: 340px; width: 100%;
   box-shadow: 0 0 0 1px rgba(248,113,113,.1), 0 32px 64px rgba(0,0,0,.6);
 }
+
 .cheat-icon { font-size: 40px; margin-bottom: 14px; }
 .cheat-title { font-size: 18px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
-.cheat-counter { font-family: var(--mono); font-size: 42px; font-weight: 500; color: var(--text); margin: 14px 0; line-height: 1; }
+
+.cheat-counter {
+  font-family: var(--mono); font-size: 42px; font-weight: 500;
+  color: var(--text); margin: 14px 0;
+  line-height: 1;
+}
 .cheat-counter span { font-size: 20px; color: var(--muted); }
-.cheat-msg { font-size: 13px; color: var(--dim); line-height: 1.7; margin-bottom: 20px; }
-.btn-dismiss { width: 100%; padding: 11px 28px; background: var(--red-lt); border: 1.5px solid rgba(248,113,113,.3); border-radius: 10px; color: var(--red); font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; }
+
+.cheat-msg {
+  font-size: 13px; color: var(--dim); line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.btn-dismiss {
+  width: 100%; padding: 11px 28px;
+  background: var(--red-lt); border: 1.5px solid rgba(248,113,113,.3);
+  border-radius: 10px; color: var(--red);
+  font-family: var(--sans); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
 .btn-dismiss:hover { background: rgba(248,113,113,.2); }
 
+/* Fullscreen overlay */
 #ov-fs { background: rgba(6,8,14,.95); }
-.fs-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 20px; padding: 32px 28px; max-width: 320px; width: 100%; box-shadow: 0 32px 64px rgba(0,0,0,.6); }
+
+.fs-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 32px 28px; max-width: 320px; width: 100%;
+  box-shadow: 0 32px 64px rgba(0,0,0,.6);
+}
 .fs-icon { font-size: 36px; margin-bottom: 14px; }
 .fs-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .fs-sub { font-size: 13px; color: var(--dim); line-height: 1.6; margin-bottom: 22px; }
-.btn-fs { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--blue), #3b82f6); color: #fff; border: none; border-radius: 10px; font-family: var(--sans); font-size: 14.5px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(96,165,250,.3); transition: opacity .15s; }
+.btn-fs {
+  width: 100%; padding: 12px;
+  background: linear-gradient(135deg, var(--blue), #3b82f6);
+  color: #fff; border: none; border-radius: 10px;
+  font-family: var(--sans); font-size: 14.5px; font-weight: 600;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(96,165,250,.3);
+  transition: opacity .15s;
+}
 .btn-fs:hover { opacity: .9; }
 .fs-cd { font-size: 11px; color: var(--muted); margin-top: 10px; }
 
@@ -463,20 +501,68 @@ html, body {
 ════════════════════════════════ */
 #sc-done {
   flex-direction: column; align-items: center; justify-content: center;
-  padding: 40px 24px; text-align: center; background: var(--bg);
+  padding: 40px 24px; text-align: center;
+  background: var(--bg);
   background-image: radial-gradient(ellipse 50% 40% at 50% 60%, rgba(52,211,153,.06) 0%, transparent 70%);
 }
-.done-badge { width: 80px; height: 80px; background: var(--green-lt); border: 2px solid rgba(52,211,153,.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 20px; box-shadow: 0 0 40px rgba(52,211,153,.15); }
-.done-title { font-family: var(--serif); font-size: 24px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-.done-tagline { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
-.score-card { background: var(--surface); border: 1px solid var(--border2); border-radius: 18px; padding: 24px 48px; margin-bottom: 20px; box-shadow: 0 8px 32px rgba(0,0,0,.3); }
-.score-num { font-family: var(--mono); font-size: 60px; font-weight: 500; color: var(--green); line-height: 1; }
-.score-max { font-family: var(--mono); font-size: 16px; color: var(--muted); margin-bottom: 4px; }
-.score-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
-.done-info { font-size: 13px; color: var(--dim); line-height: 1.8; max-width: 320px; }
 
-.spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: sp .7s linear infinite; display: inline-block; vertical-align: middle; }
-.timer-lbl-sm { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; display: block; text-align: center; margin-top: 2px; }
+.done-badge {
+  width: 80px; height: 80px;
+  background: var(--green-lt);
+  border: 2px solid rgba(52,211,153,.25);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 20px;
+  box-shadow: 0 0 40px rgba(52,211,153,.15);
+}
+
+.done-title {
+  font-family: var(--serif);
+  font-size: 24px; font-weight: 600;
+  color: var(--text); margin-bottom: 6px;
+}
+
+.done-tagline {
+  font-size: 13px; color: var(--muted); margin-bottom: 28px;
+}
+
+.score-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 18px; padding: 24px 48px; margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+
+.score-num {
+  font-family: var(--mono); font-size: 60px; font-weight: 500;
+  color: var(--green); line-height: 1;
+}
+
+.score-max {
+  font-family: var(--mono); font-size: 16px; color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.score-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; }
+
+.done-info {
+  font-size: 13px; color: var(--dim); line-height: 1.8;
+  max-width: 320px;
+}
+
+/* ── Spinner ── */
+.spin {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.2); border-top-color: #fff;
+  border-radius: 50%; animation: sp .7s linear infinite;
+  display: inline-block; vertical-align: middle;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ── Timer label ── */
+.timer-lbl-sm {
+  font-size: 8px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .8px; display: block; text-align: center; margin-top: 2px;
+}
 </style>
 </head>
 <body>
@@ -534,7 +620,7 @@ html, body {
         <div class="field">
           <label class="field-label">Email Sekolah</label>
           <input type="email" id="inp-email" class="field-inp"
-            placeholder="nama@sekolah.sch.id" autocomplete="off">
+            placeholder="nama@sekolah.sch.id" id="inp-email-login" autocomplete="off">
         </div>
         <div class="field">
           <label class="field-label">Nama Lengkap</label>
@@ -559,7 +645,8 @@ html, body {
       <svg class="timer-svg" width="54" height="54" viewBox="0 0 54 54">
         <circle class="timer-bg" cx="27" cy="27" r="22"/>
         <circle class="timer-ring" id="timer-ring" cx="27" cy="27" r="22"
-          stroke="var(--green)" stroke-dasharray="138.2" stroke-dashoffset="0"/>
+          stroke="var(--green)"
+          stroke-dasharray="138.2" stroke-dashoffset="0"/>
       </svg>
       <div>
         <div class="timer-val" id="timer">90:00</div>
@@ -598,9 +685,21 @@ let SOAL=[],JAWABAN={},curIdx=0;
 let timeLeft=0,_totalTime=0,timerItv=null,splitItv=null;
 let cheatCount=0,lastCheat=0,fsItv=null,_submitting=false;
 const MAX_CHEAT=3;
-const TIMER_CIRC=138.2;
+const TIMER_CIRC=138.2; // 2π × 22
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// Fix LaTeX commands corrupted oleh JSON escape sequences
+// \frac → \f (form feed) + rac, \theta → \t (tab) + heta, dll
+function fixLatex(s){
+  if(!s) return s;
+  return s
+    .replace(/\x08/g,'\\b')   // backspace  → \b (\beta, \binom)
+    .replace(/\x0C/g,'\\f')   // form feed  → \f (\frac, \forall)
+    .replace(/\x0D/g,'\\r')   // CR         → \r (\right, \rangle)
+    .replace(/\t/g,'\\t');     // tab        → \t (\theta, \text, \times)
+}
+
 function setScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 function showOv(id){document.getElementById(id).classList.add('show');}
 function hideOv(id){document.getElementById(id).classList.remove('show');}
@@ -619,7 +718,7 @@ async function doLogin(){
   if(!name)return showErr('Nama wajib diisi');
   btn.disabled=true;btn.innerHTML='<div class="spin"></div>&nbsp;Memvalidasi...';
   try{
-    const r=await fetch('/api/cbt/validate-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,userEmail:email,userName:name}),cache:'no-store'});
+    const r=await fetch('/api/cbt/validate-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,userEmail:email,userName:name})});
     const j=await r.json();
     if(!j.success){
       if(j.expired)return showErr('Token kadaluarsa. Minta token terbaru ke pengawas.');
@@ -632,12 +731,11 @@ async function doLogin(){
       const gw=document.getElementById('geo-warn');gw.style.display='block';
       gw.textContent=`⚠ Login dari ${j.geo.city||''}, ${j.geo.region||j.geo.country} telah dicatat.`;
     }
-    const roomParam=SESSION._roomId?`&roomId=${encodeURIComponent(SESSION._roomId)}`:'';
-    const sr=await fetch(`/api/cbt/sessions/${SESSION.id}/soal/siswa?email=${encodeURIComponent(email)}${roomParam}`,{cache:'no-store'});
+    const roomParam=SESSION._roomId?`&roomId=${encodeURIComponent(SESSION._roomId)}`:'';const sr=await fetch(`/api/cbt/sessions/${SESSION.id}/soal/siswa?email=${encodeURIComponent(email)}${roomParam}`);
     const sj=await sr.json();
     if(!sj.success||!sj.data.length)return showErr('Soal belum tersedia. Hubungi pengawas.');
     SOAL=sj.data;
-    try{const jr=await fetch(`/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(email)}`,{cache:'no-store'});const jj=await jr.json();if(jj.success)JAWABAN=jj.data||{};}catch(_){}
+    try{const jr=await fetch(`/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(email)}`);const jj=await jr.json();if(jj.success)JAWABAN=jj.data||{};}catch(_){}
     startExam();
   }catch(e){showErr('Gagal terhubung ke server.');}
   btn.disabled=false;btn.innerHTML='Masuk Ujian';
@@ -651,7 +749,7 @@ function showErr(msg){
 /* ══════════════════════════════════════════════
    EXAM
 ══════════════════════════════════════════════ */
-async function startExam(){
+function startExam(){
   setScreen('sc-exam');
   document.getElementById('hdr-title').textContent=SESSION.name;
   document.getElementById('hdr-sub').textContent=`${USER_NAME} · ${USER_EMAIL}`;
@@ -672,6 +770,7 @@ async function startExam(){
   splitItv=setInterval(checkSplit,1000);
   setTimeout(doFullscreen,400);
 
+  // Init PWA Offline Manager
   CBTOffline.init(SESSION.id, USER_EMAIL, SESSION._roomId || null);
   CBTOffline.onStatusChange(({isOnline, pending}) => {
     if(!isOnline){
@@ -686,12 +785,6 @@ async function startExam(){
     console.log(`[PWA] Synced ${synced}/${total} answers`);
     renderNavUpdate();
   });
-
-  // Capacitor: lock portrait & cegah layar mati
-  if (window.isCapacitor) {
-    try { await Capacitor.Plugins.ScreenOrientation.lock({ orientation: 'portrait' }); } catch(_) {}
-    try { await Capacitor.Plugins.KeepAwake.keepAwake(); } catch(_) {}
-  }
 }
 
 function onKeyGuard(e){
@@ -702,24 +795,6 @@ function onKeyGuard(e){
 /* ══════════════════════════════════════════════
    RENDER SOAL
 ══════════════════════════════════════════════ */
-function mdRenderSoal(txt) {
-  if (!txt) return '';
-  return esc(txt)
-    .replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" style="max-width:100%;border-radius:6px;display:block;margin:6px 0">');
-}
-
-function toggleTeksBacaan(id) {
-  const el  = document.getElementById(id);
-  const tog = document.getElementById(id + '-toggle');
-  if (!el) return;
-  const hidden = el.style.display === 'none';
-  el.style.display  = hidden ? 'block' : 'none';
-  if (tog) tog.textContent = hidden ? '▼ Lipat' : '▶ Buka';
-}
-
 function renderSoal(idx){
   const s=SOAL[idx];if(!s)return;
   const jaw=JAWABAN[s.nomor]||null;
@@ -729,26 +804,16 @@ function renderSoal(idx){
       ['A','B','C','D','E'].filter(k=>s.opsi[k]).map(k=>
         `<button class="opsi-btn${jaw===k?' selected':''}" onclick="pilih(${s.nomor},'${k}',this)">
           <span class="opsi-key">${k}</span>
-          <span class="opsi-text">${mdRenderSoal(s.opsi[k])}</span>
+          <span class="opsi-text">${esc(fixLatex(s.opsi[k]))}</span>
         </button>`
       ).join('')+'</div>';
   }else{
     body=`<div class="essay-wrap"><textarea class="essay-ta" id="ta-${s.nomor}" oninput="saveEssay(${s.nomor},this.value)" placeholder="Tulis jawaban Anda di sini...">${esc(jaw||'')}</textarea></div>`;
   }
-
-  let teksBacaanHtml = '';
-  if (s.teks_bacaan) {
-    const tbId = 'tb-body-' + idx;
-    teksBacaanHtml = '<div class="teks-bacaan-card">' +
-      '<div class="teks-bacaan-head" onclick="toggleTeksBacaan(\''+tbId+'\')">' +
-      '<span class="teks-bacaan-label">📖 Teks Bacaan</span>' +
-      '<span class="teks-bacaan-toggle" id="'+tbId+'-toggle">▼ Lipat</span></div>' +
-      '<div class="teks-bacaan-body" id="'+tbId+'">' + esc(s.teks_bacaan) + '</div></div>';
-  }
-
-  const soalTxt = mdRenderSoal(s.soal);
-  const hasMath = (s.soal + (s.teks_bacaan||'')).includes('$') ||
-    (s.opsi && Object.values(s.opsi).some(v=>v&&v.includes('$')));
+  // fixLatex: perbaiki backslash yang corrupt oleh JSON parse
+  let soalTxt=esc(fixLatex(s.soal))
+    .replace(/`([^`]+)`/g,'<code style="font-family:var(--mono);background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-size:.9em">$1</code>')
+    .replace(/\n/g,'<br>');
   const answeredCount=Object.keys(JAWABAN).length;
   const dots=SOAL.map((q,i)=>{
     const cls=i===idx?'current':JAWABAN[q.nomor]?'answered':'';
@@ -756,7 +821,6 @@ function renderSoal(idx){
   }).join('');
 
   document.getElementById('exam-body').innerHTML=`
-    ${teksBacaanHtml}
     <div class="soal-card">
       <div class="soal-badge">
         <span class="badge-no">Soal ${s.displayNomor||s.nomor}</span>
@@ -774,15 +838,8 @@ function renderSoal(idx){
       <div class="nav-grid">${dots}</div>
     </div>`;
 
-  const pct=Math.round(answeredCount/SOAL.length*100);
-  document.getElementById('prog-bar').style.width=pct+'%';
-  document.getElementById('btn-prev').disabled=idx===0;
-  const last=idx===SOAL.length-1;
-  document.getElementById('btn-next').style.display=last?'none':'flex';
-  document.getElementById('btn-sub').style.display=last?'flex':'none';
-  document.getElementById('exam-body').scrollTo(0,0);
-
-  if (hasMath && typeof renderMathInElement !== 'undefined') {
+  // Render matematika dengan KaTeX setelah DOM diupdate
+  if (typeof renderMathInElement !== 'undefined') {
     try {
       renderMathInElement(document.getElementById('exam-body'), {
         delimiters: [
@@ -791,10 +848,20 @@ function renderSoal(idx){
           { left: '\\(', right: '\\)', display: false },
           { left: '\\[', right: '\\]', display: true  },
         ],
-        throwOnError: false, errorColor: '#f87171',
+        ignoredTags: ['script','noscript','style','textarea','pre','code'],
+        throwOnError: false,
+        errorColor:   '#f87171',
       });
     } catch(_) {}
   }
+
+  const pct=Math.round(answeredCount/SOAL.length*100);
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('btn-prev').disabled=idx===0;
+  const last=idx===SOAL.length-1;
+  document.getElementById('btn-next').style.display=last?'none':'flex';
+  document.getElementById('btn-sub').style.display=last?'flex':'none';
+  document.getElementById('exam-body').scrollTo(0,0);
 }
 
 /* ══════════════════════════════════════════════
@@ -815,6 +882,7 @@ async function saveEssay(nomor,val){
 async function saveToDB(nomor,jawaban){
   try {
     const result = await CBTOffline.sendAnswer(nomor, jawaban);
+    // Update dot warna berdasarkan sync status
     if (result?.queued) {
       const dot = document.querySelector(`.nav-dot[onclick="goTo(${curIdx})"]`);
       if (dot) dot.classList.add('pending');
@@ -838,7 +906,7 @@ function goNext(){if(curIdx<SOAL.length-1){curIdx++;renderSoal(curIdx);}}
 function goTo(i){curIdx=i;renderSoal(i);}
 
 /* ══════════════════════════════════════════════
-   TIMER
+   TIMER (dengan ring SVG)
 ══════════════════════════════════════════════ */
 function updateTimer(){
   const m=Math.floor(timeLeft/60),s=timeLeft%60;
@@ -847,9 +915,14 @@ function updateTimer(){
   el.className='timer-val';
   const ring=document.getElementById('timer-ring');
   const pct=_totalTime>0?timeLeft/_totalTime:1;
-  ring.style.strokeDashoffset=TIMER_CIRC*(1-pct);
-  if(timeLeft<=300){el.classList.add('warn');ring.style.stroke='var(--amber)';}
-  if(timeLeft<=60){el.classList.remove('warn');el.classList.add('danger');ring.style.stroke='var(--red)';}
+  const offset=TIMER_CIRC*(1-pct);
+  ring.style.strokeDashoffset=offset;
+  if(timeLeft<=300){
+    el.classList.add('warn');ring.style.stroke='var(--amber)';
+  }
+  if(timeLeft<=60){
+    el.classList.remove('warn');el.classList.add('danger');ring.style.stroke='var(--red)';
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -870,7 +943,8 @@ async function doSubmit(){
   const btn=document.getElementById('btn-sub');
   if(btn){btn.disabled=true;btn.innerHTML='<div class="spin"></div>';}
 
-  async function goToDone(got,max,extraInfo){
+  // Helper: pindah ke layar selesai — SELALU dipanggil di semua kondisi
+  function goToDone(got,max,extraInfo){
     try{if(document.exitFullscreen)document.exitFullscreen();}catch(_){}
     setScreen('sc-done');
     document.getElementById('done-score').textContent=got??'—';
@@ -883,14 +957,10 @@ async function doSubmit(){
     document.removeEventListener('copy',e=>e.preventDefault());
     document.removeEventListener('cut',e=>e.preventDefault());
     document.removeEventListener('keydown',onKeyGuard);
-    // Capacitor: lepas lock setelah selesai
-    if (window.isCapacitor) {
-      try { await Capacitor.Plugins.ScreenOrientation.unlock(); } catch(_) {}
-      try { await Capacitor.Plugins.KeepAwake.allowSleep(); } catch(_) {}
-    }
   }
 
   try{
+    // Simpan semua jawaban essay dulu
     for(const s of SOAL){
       if(s.tipe==='ES'){
         const ta=document.getElementById(`ta-${s.nomor}`);
@@ -898,37 +968,40 @@ async function doSubmit(){
       }
     }
 
+    // Offline saat submit
     if(typeof CBTOffline!=='undefined'&&!CBTOffline.isOnline){
       setOfflineBar('offline','⏳ Offline — submit otomatis saat koneksi kembali','');
       goToDone('?',0,`${USER_NAME} · ${USER_EMAIL} · Jawaban tersimpan lokal`);
       return;
     }
 
+    // Submit langsung ke server
     let submitOk=false;
     try{
       const r=await fetch(`/api/cbt/sessions/${SESSION.id}/submit`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({userEmail:USER_EMAIL}),
         signal:AbortSignal.timeout(10000),
-        cache:'no-store',
       });
       submitOk=r.ok||r.status===200;
     }catch(e){console.warn('[CBT] submit error:',e.message);}
 
+    // Ambil nilai PG
     let got=0,max=0;
     SOAL.forEach(s=>{max+=s.bobot;});
     if(submitOk){
       try{
-        const rr=await fetch(`/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(USER_EMAIL)}`,{cache:'no-store'});
+        const rr=await fetch(`/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(USER_EMAIL)}`);
         const jj=await rr.json();
         if(jj.success&&jj.raw)got=jj.raw.filter(j=>j.is_correct===1).reduce((a,j)=>a+j.nilai,0);
       }catch(_){}
     }
 
     try{if(typeof CBTOffline!=='undefined')await CBTOffline.clearSession();}catch(_){}
-    goToDone(got,max,`${USER_NAME} · ${USER_EMAIL} · ${SESSION.mapel||''} · Essay dinilai pengawas`);
+    goToDone(got,max,`${USER_NAME} · ${USER_EMAIL} · ${SESSION.mapel} · Essay dinilai pengawas`);
 
   }catch(err){
+    // Fallback — apapun yang error, tetap pindah ke layar selesai
     console.error('[CBT] doSubmit error:',err);
     goToDone('—',0,`${USER_NAME} · ${USER_EMAIL} · Jawaban telah dikirim`);
   }
@@ -967,21 +1040,31 @@ window.addEventListener('resize',function(){
 async function recordCheat(type,detail){
   if(_submitting)return;
   if(type==='tab_switch'&&!canRecord())return;
-  if(cheatCount>=MAX_CHEAT)return;
   cheatCount++;
-  const remain=MAX_CHEAT-cheatCount;
   const labels={tab_switch:'Berpindah Tab!',exit_fullscreen:'Keluar Fullscreen!',split_screen:'Split Screen!',devtools_attempt:'DevTools!'};
   document.getElementById('ov-cheat-title').textContent=labels[type]||'Pelanggaran!';
   document.getElementById('ov-cheat-count-num').textContent=cheatCount;
+
   if(cheatCount>=MAX_CHEAT){
-    document.getElementById('ov-cheat-msg').innerHTML=`Anda telah melakukan <strong style="color:var(--red)">${MAX_CHEAT}x</strong> pelanggaran.<br>Jawaban dikumpulkan otomatis dalam 3 detik.`;
-    document.getElementById('btn-dismiss').style.display='none';
-    showOv('ov-cheat');_submitting=true;clearInterval(splitItv);setTimeout(autoSubmit,3000);
+    // Sudah 3x (atau lebih) — peringatan keras, tapi siswa MASIH BISA lanjut
+    document.getElementById('ov-cheat-msg').innerHTML=
+      `Anda telah melakukan <strong style="color:var(--red)">${cheatCount}x</strong> pelanggaran.<br>`+
+      `Semua kejadian <strong>dicatat dan dilaporkan</strong> ke pengawas.`;
+    document.getElementById('btn-dismiss').style.display='block';
+    document.getElementById('btn-dismiss').textContent='Kembali ke Ujian';
+    showOv('ov-cheat');
+    // Reset counter agar siklus peringatan bisa berulang
+    cheatCount=0;
   }else{
-    document.getElementById('ov-cheat-msg').innerHTML=`Sisa toleransi: <strong style="color:var(--amber)">${remain}x</strong> lagi.<br>Kejadian ini dicatat dan dilaporkan ke pengawas.`;
-    document.getElementById('btn-dismiss').style.display='block';showOv('ov-cheat');
+    const remain=MAX_CHEAT-cheatCount;
+    document.getElementById('ov-cheat-msg').innerHTML=
+      `Sisa toleransi: <strong style="color:var(--amber)">${remain}x</strong> lagi.<br>`+
+      `Kejadian ini dicatat dan dilaporkan ke pengawas.`;
+    document.getElementById('btn-dismiss').style.display='block';
+    document.getElementById('btn-dismiss').textContent='Kembali ke Ujian';
+    showOv('ov-cheat');
   }
-  try{await fetch(`/api/cbt/sessions/${SESSION.id}/cheat-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userEmail:USER_EMAIL,eventType:type,detail:`${detail} (ke-${cheatCount})`}),cache:'no-store'});}catch(_){}
+  try{await fetch(`/api/cbt/sessions/${SESSION.id}/cheat-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userEmail:USER_EMAIL,eventType:type,detail:`${detail} (ke-${cheatCount||MAX_CHEAT})`}),cache:'no-store'});}catch(_){}
 }
 function dismissCheat(){hideOv('ov-cheat');doFullscreen();}
 
@@ -1013,33 +1096,39 @@ document.addEventListener('keydown',e=>{
 
 // ── Offline bar helper ────────────────────────────────────────────────────────
 function setOfflineBar(mode, msg, sub) {
-  const bar   = document.getElementById('offline-bar');
-  const msgEl = document.getElementById('offline-msg');
-  const subEl = document.getElementById('offline-pending');
-  const dotEl = document.getElementById('offline-dot');
+  const bar     = document.getElementById('offline-bar');
+  const msgEl   = document.getElementById('offline-msg');
+  const subEl   = document.getElementById('offline-pending');
+  const dotEl   = document.getElementById('offline-dot');
   if (!bar) return;
+
+  // Reset class
   bar.className = '';
+
   if (mode === 'offline') {
     bar.className = 'offline';
-    if (dotEl) dotEl.className = 'offline-dot';
+    if (dotEl) { dotEl.className = 'offline-dot'; }
   } else if (mode === 'syncing') {
     bar.className = 'syncing';
-    if (dotEl) dotEl.className = 'sync-spin';
+    if (dotEl) { dotEl.className = 'sync-spin'; }
   } else if (mode === 'online') {
     bar.className = 'online';
-    if (dotEl) dotEl.className = 'offline-dot';
+    if (dotEl) { dotEl.className = 'offline-dot'; }
   } else {
     bar.style.display = 'none';
     return;
   }
+
   if (msgEl) msgEl.textContent = msg;
   if (subEl) subEl.textContent = sub || '';
 }
 
-// ── Load school info ──────────────────────────────────────────────────────────
+// ── Service Worker Registration ───────────────────────────────────────────────
+
+// Load school info
 (async function(){
   try{
-    const r=await fetch('/api/health',{cache:'no-store'});
+    const r=await fetch('/api/health');
     const j=await r.json();
     if(j.school){
       document.title=`CBT — ${j.school}`;
@@ -1047,19 +1136,18 @@ function setOfflineBar(mode, msg, sub) {
       if(el) el.textContent=j.school;
     }
     if(j.domain){
-      const inp=document.getElementById('inp-email');
+      const inp=document.getElementById('inp-email-login');
       if(inp) inp.placeholder=`nama@${j.domain}`;
     }
   }catch(_){}
 })();
-
-// ── Service Worker Registration ───────────────────────────────────────────────
-// Hanya register SW di browser biasa, bukan di Capacitor
-if ('serviceWorker' in navigator && !window.isCapacitor) {
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       console.log('[PWA] Service Worker registered:', reg.scope);
+
+      // Update tersedia?
       reg.addEventListener('updatefound', () => {
         const newSW = reg.installing;
         newSW.addEventListener('statechange', () => {

@@ -563,6 +563,41 @@ html, body { height: 100%; font-family: var(--sans); background: var(--bg); colo
   font-size: 8px; color: var(--muted); text-transform: uppercase;
   letter-spacing: .8px; display: block; text-align: center; margin-top: 2px;
 }
+
+/* ── Server Selector ── */
+.server-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; padding: 9px 12px;
+  background: rgba(255,255,255,.025);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.server-row-label {
+  font-size: 9.5px; font-weight: 700; color: var(--muted);
+  letter-spacing: .7px; text-transform: uppercase; white-space: nowrap;
+  flex-shrink: 0;
+}
+.server-select {
+  flex: 1; background: transparent; border: none;
+  color: var(--dim); font-family: var(--sans); font-size: 12px;
+  cursor: pointer; outline: none; min-width: 0;
+  -webkit-appearance: none; appearance: none;
+}
+.server-select option { background: #1a2035; color: var(--text); }
+.server-ping-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0; transition: background .4s;
+  background: var(--muted);
+}
+.server-ping-dot.ok      { background: var(--green); animation: pulse 2s infinite; }
+.server-ping-dot.fail    { background: var(--red); }
+.server-ping-dot.checking{ background: var(--amber); animation: blink .8s infinite; }
+.server-btn-ping {
+  font-size: 10px; color: var(--muted); cursor: pointer; flex-shrink: 0;
+  background: none; border: none; padding: 0; font-family: var(--sans);
+  transition: color .15s;
+}
+.server-btn-ping:hover { color: var(--blue); }
 </style>
 </head>
 <body>
@@ -626,6 +661,17 @@ html, body { height: 100%; font-family: var(--sans); background: var(--bg); colo
           <label class="field-label">Nama Lengkap</label>
           <input type="text" id="inp-name" class="field-inp" placeholder="Nama sesuai absen">
         </div>
+        <!-- ── Server selector ── -->
+        <div class="server-row">
+          <span class="server-row-label">Server</span>
+          <select id="server-select" class="server-select" onchange="onServerChange(this.value)">
+            <option value="https://gws.karyabangsa.sch.id">🌐 Internet — gws.karyabangsa.sch.id</option>
+            <option value="http://192.168.1.102:3000">🔌 LAN — 192.168.1.102:3000</option>
+          </select>
+          <button class="server-btn-ping" onclick="pingServer()" title="Cek koneksi">↺</button>
+          <div class="server-ping-dot checking" id="server-ping-dot" title="Status koneksi server"></div>
+        </div>
+
         <button class="btn-login" id="btn-login" onclick="doLogin()">Masuk Ujian</button>
         <div class="err-msg" id="err-msg"></div>
       </div>
@@ -687,6 +733,56 @@ let cheatCount=0,lastCheat=0,fsItv=null,_submitting=false;
 const MAX_CHEAT=3;
 const TIMER_CIRC=138.2; // 2π × 22
 
+/* ── Server URL management ────────────────────────────────────────────────── */
+const SERVER_OPTIONS=[
+  {label:'Internet',url:'https://gws.karyabangsa.sch.id'},
+  {label:'LAN',    url:'http://192.168.1.102:3000'},
+];
+// Baca dari localStorage; default = internet
+let SERVER_URL=localStorage.getItem('gwsServerUrl')||SERVER_OPTIONS[0].url;
+
+function initServerSelector(){
+  const sel=document.getElementById('server-select');
+  if(!sel)return;
+  // Pastikan value yang tersimpan ada dalam opsi
+  const valid=SERVER_OPTIONS.some(o=>o.url===SERVER_URL);
+  if(!valid)SERVER_URL=SERVER_OPTIONS[0].url;
+  sel.value=SERVER_URL;
+  pingServer();
+}
+
+function onServerChange(url){
+  SERVER_URL=url;
+  localStorage.setItem('gwsServerUrl',url);
+  pingServer();
+  // Reset school info display saat server berganti
+  const el=document.getElementById('cbt-school-name');
+  if(el)el.textContent='CBT Siswa';
+}
+
+async function pingServer(){
+  const dot=document.getElementById('server-ping-dot');
+  if(dot)dot.className='server-ping-dot checking';
+  try{
+    const r=await fetch(`${SERVER_URL}/api/health`,{signal:AbortSignal.timeout(5000),cache:'no-store'});
+    if(dot)dot.className=r.ok?'server-ping-dot ok':'server-ping-dot fail';
+    if(r.ok){
+      const j=await r.json();
+      if(j.school){
+        document.title=`CBT — ${j.school}`;
+        const el=document.getElementById('cbt-school-name');
+        if(el)el.textContent=j.school;
+      }
+      if(j.domain){
+        const inp=document.getElementById('inp-email-login')||document.getElementById('inp-email');
+        if(inp)inp.placeholder=`nama@${j.domain}`;
+      }
+    }
+  }catch(_){
+    if(dot)dot.className='server-ping-dot fail';
+  }
+}
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
 // Fix LaTeX commands corrupted oleh JSON escape sequences
@@ -718,7 +814,7 @@ async function doLogin(){
   if(!name)return showErr('Nama wajib diisi');
   btn.disabled=true;btn.innerHTML='<div class="spin"></div>&nbsp;Memvalidasi...';
   try{
-    const r=await fetch('/api/cbt/validate-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,userEmail:email,userName:name})});
+    const r=await fetch(`${SERVER_URL}/api/cbt/validate-token`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,userEmail:email,userName:name})});
     const j=await r.json();
     if(!j.success){
       if(j.expired)return showErr('Token kadaluarsa. Minta token terbaru ke pengawas.');
@@ -731,11 +827,11 @@ async function doLogin(){
       const gw=document.getElementById('geo-warn');gw.style.display='block';
       gw.textContent=`⚠ Login dari ${j.geo.city||''}, ${j.geo.region||j.geo.country} telah dicatat.`;
     }
-    const roomParam=SESSION._roomId?`&roomId=${encodeURIComponent(SESSION._roomId)}`:'';const sr=await fetch(`/api/cbt/sessions/${SESSION.id}/soal/siswa?email=${encodeURIComponent(email)}${roomParam}`);
+    const roomParam=SESSION._roomId?`&roomId=${encodeURIComponent(SESSION._roomId)}`:'';const sr=await fetch(`${SERVER_URL}/api/cbt/sessions/${SESSION.id}/soal/siswa?email=${encodeURIComponent(email)}${roomParam}`);
     const sj=await sr.json();
     if(!sj.success||!sj.data.length)return showErr('Soal belum tersedia. Hubungi pengawas.');
     SOAL=sj.data;
-    try{const jr=await fetch(`/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(email)}`);const jj=await jr.json();if(jj.success)JAWABAN=jj.data||{};}catch(_){}
+    try{const jr=await fetch(`${SERVER_URL}/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(email)}`);const jj=await jr.json();if(jj.success)JAWABAN=jj.data||{};}catch(_){}
     startExam();
   }catch(e){showErr('Gagal terhubung ke server.');}
   btn.disabled=false;btn.innerHTML='Masuk Ujian';
@@ -770,21 +866,19 @@ function startExam(){
   splitItv=setInterval(checkSplit,1000);
   setTimeout(doFullscreen,400);
 
-  // Init PWA Offline Manager
-  CBTOffline.init(SESSION.id, USER_EMAIL, SESSION._roomId || null);
-  CBTOffline.onStatusChange(({isOnline, pending}) => {
-    if(!isOnline){
-      setOfflineBar('offline', `☁️ Offline — ${pending} jawaban tersimpan lokal`, `${pending} pending`);
-    } else if(pending > 0){
-      setOfflineBar('syncing', `🔄 Menyinkronkan ${pending} jawaban...`, '');
-    } else {
-      setOfflineBar('online', '✅ Semua jawaban tersinkronisasi', '');
+  // Monitor koneksi jaringan sederhana
+  function checkOnline(){
+    if(!navigator.onLine){
+      setOfflineBar('offline','☁️ Tidak ada koneksi — jawaban terakhir mungkin belum tersimpan','');
     }
+  }
+  window.addEventListener('online', ()=>{
+    setOfflineBar('online','✅ Koneksi kembali','');
   });
-  CBTOffline.onSync((synced, total) => {
-    console.log(`[PWA] Synced ${synced}/${total} answers`);
-    renderNavUpdate();
+  window.addEventListener('offline', ()=>{
+    setOfflineBar('offline','☁️ Tidak ada koneksi — tetap jawab, akan tersimpan saat online','');
   });
+  if(!navigator.onLine)checkOnline();
 }
 
 function onKeyGuard(e){
@@ -880,14 +974,13 @@ async function saveEssay(nomor,val){
   await saveToDB(nomor,val||null);
 }
 async function saveToDB(nomor,jawaban){
-  try {
-    const result = await CBTOffline.sendAnswer(nomor, jawaban);
-    // Update dot warna berdasarkan sync status
-    if (result?.queued) {
-      const dot = document.querySelector(`.nav-dot[onclick="goTo(${curIdx})"]`);
-      if (dot) dot.classList.add('pending');
-    }
-  } catch(_) {}
+  try{
+    await fetch(`${SERVER_URL}/api/cbt/sessions/${SESSION.id}/jawaban`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userEmail:USER_EMAIL,nomor,jawaban}),
+    });
+  }catch(_){} // offline — tidak apa-apa, submit tetap bisa
 }
 function renderNavUpdate(){
   const answeredCount=Object.keys(JAWABAN).length;
@@ -960,25 +1053,18 @@ async function doSubmit(){
   }
 
   try{
-    // Simpan semua jawaban essay dulu
+    // Simpan semua jawaban essay yang belum tersimpan
     for(const s of SOAL){
       if(s.tipe==='ES'){
         const ta=document.getElementById(`ta-${s.nomor}`);
-        if(ta&&ta.value){try{await CBTOffline.sendAnswer(s.nomor,ta.value);}catch(_){}}
+        if(ta&&ta.value.trim()){try{await saveToDB(s.nomor,ta.value.trim());}catch(_){}}
       }
     }
 
-    // Offline saat submit
-    if(typeof CBTOffline!=='undefined'&&!CBTOffline.isOnline){
-      setOfflineBar('offline','⏳ Offline — submit otomatis saat koneksi kembali','');
-      goToDone('?',0,`${USER_NAME} · ${USER_EMAIL} · Jawaban tersimpan lokal`);
-      return;
-    }
-
-    // Submit langsung ke server
+    // Submit ke server
     let submitOk=false;
     try{
-      const r=await fetch(`/api/cbt/sessions/${SESSION.id}/submit`,{
+      const r=await fetch(`${SERVER_URL}/api/cbt/sessions/${SESSION.id}/submit`,{
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({userEmail:USER_EMAIL}),
         signal:AbortSignal.timeout(10000),
@@ -986,18 +1072,17 @@ async function doSubmit(){
       submitOk=r.ok||r.status===200;
     }catch(e){console.warn('[CBT] submit error:',e.message);}
 
-    // Ambil nilai PG
+    // Ambil nilai PG sementara
     let got=0,max=0;
     SOAL.forEach(s=>{max+=s.bobot;});
     if(submitOk){
       try{
-        const rr=await fetch(`/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(USER_EMAIL)}`);
+        const rr=await fetch(`${SERVER_URL}/api/cbt/sessions/${SESSION.id}/jawaban/${encodeURIComponent(USER_EMAIL)}`);
         const jj=await rr.json();
         if(jj.success&&jj.raw)got=jj.raw.filter(j=>j.is_correct===1).reduce((a,j)=>a+j.nilai,0);
       }catch(_){}
     }
 
-    try{if(typeof CBTOffline!=='undefined')await CBTOffline.clearSession();}catch(_){}
     goToDone(got,max,`${USER_NAME} · ${USER_EMAIL} · ${SESSION.mapel} · Essay dinilai pengawas`);
 
   }catch(err){
@@ -1064,7 +1149,7 @@ async function recordCheat(type,detail){
     document.getElementById('btn-dismiss').textContent='Kembali ke Ujian';
     showOv('ov-cheat');
   }
-  try{await fetch(`/api/cbt/sessions/${SESSION.id}/cheat-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userEmail:USER_EMAIL,eventType:type,detail:`${detail} (ke-${cheatCount||MAX_CHEAT})`}),cache:'no-store'});}catch(_){}
+  try{await fetch(`${SERVER_URL}/api/cbt/sessions/${SESSION.id}/cheat-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userEmail:USER_EMAIL,eventType:type,detail:`${detail} (ke-${cheatCount||MAX_CHEAT})`}),cache:'no-store'});}catch(_){}
 }
 function dismissCheat(){hideOv('ov-cheat');doFullscreen();}
 
@@ -1125,22 +1210,8 @@ function setOfflineBar(mode, msg, sub) {
 
 // ── Service Worker Registration ───────────────────────────────────────────────
 
-// Load school info
-(async function(){
-  try{
-    const r=await fetch('/api/health');
-    const j=await r.json();
-    if(j.school){
-      document.title=`CBT — ${j.school}`;
-      const el=document.getElementById('cbt-school-name');
-      if(el) el.textContent=j.school;
-    }
-    if(j.domain){
-      const inp=document.getElementById('inp-email-login');
-      if(inp) inp.placeholder=`nama@${j.domain}`;
-    }
-  }catch(_){}
-})();
+// Init server selector + ping (menggantikan hard-coded school info loader)
+initServerSelector();
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
