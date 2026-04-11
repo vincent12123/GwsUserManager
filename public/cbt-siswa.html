@@ -789,8 +789,9 @@ async function pingServer(){
   if(dot)dot.className='server-ping-dot checking';
   try{
     const r=await fetch(`${SERVER_URL}/api/health`,{signal:AbortSignal.timeout(5000),cache:'no-store'});
-    if(dot)dot.className=r.ok?'server-ping-dot ok':'server-ping-dot fail';
-    if(r.ok){
+    // Server reachable = green, regardless of HTTP status code
+    if(dot)dot.className='server-ping-dot ok';
+    try{
       const j=await r.json();
       if(j.school){
         document.title=`CBT — ${j.school}`;
@@ -801,8 +802,9 @@ async function pingServer(){
         const inp=document.getElementById('inp-email-login')||document.getElementById('inp-email');
         if(inp)inp.placeholder=`nama@${j.domain}`;
       }
-    }
+    }catch(_){}  // non-JSON response is fine, server still reachable
   }catch(_){
+    // Only network error / timeout / CORS = server unreachable
     if(dot)dot.className='server-ping-dot fail';
   }
 }
